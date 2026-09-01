@@ -73,3 +73,47 @@ export default defineConfig([
 ])
 
 ```
+
+```
+rehab-monitoring
+├─ eslint.config.js
+├─ index.html
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.js
+├─ public
+│  ├─ favicon.svg
+│  └─ icons.svg
+├─ README.md
+├─ src
+│  ├─ App.css
+│  ├─ App.tsx
+│  ├─ assets
+│  │  ├─ hero.png
+│  │  ├─ react.svg
+│  │  └─ vite.svg
+│  ├─ components
+│  │  ├─ BatchLoggingView.tsx
+│  │  ├─ ConfigView.tsx
+│  │  ├─ JournalEntryView.tsx
+│  │  ├─ MatrixView.tsx
+│  │  ├─ Navbar.tsx
+│  │  └─ SmartImportModal.tsx
+│  ├─ db
+│  │  ├─ db.ts
+│  │  └─ seedData.ts
+│  ├─ index.css
+│  ├─ main.tsx
+│  ├─ types
+│  │  └─ index.ts
+│  └─ utils
+│     ├─ clipboardParser.ts
+│     ├─ dateUtils.ts
+│     └─ excelExport.ts
+├─ tailwind.config.js
+├─ tsconfig.app.json
+├─ tsconfig.json
+├─ tsconfig.node.json
+└─ vite.config.ts
+
+```
