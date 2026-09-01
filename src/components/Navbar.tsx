@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, FileSpreadsheet, Users, BookOpen, Settings, Download } from 'lucide-react';
+import { Leaf, FileSpreadsheet, Users, BookOpen, SlidersHorizontal, Download } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: 'matrix' | 'batch' | 'journal' | 'config';
@@ -15,12 +15,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
         
         {/* Brand */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rehab-500 to-emerald-400 flex items-center justify-center shadow-inner">
-            <Activity className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-emerald-500 to-rehab-500 flex items-center justify-center shadow-inner">
+            <Leaf className="w-5 h-5 text-white stroke-[2.2]" />
           </div>
           <div>
-            <h1 className="font-semibold text-lg tracking-wide leading-tight">RehabTrack</h1>
-            <p className="text-xs text-rehab-200">Clinical Attendance & Monitoring</p>
+            <h1 className="font-semibold text-lg tracking-wide leading-tight text-white">RehabMonitoring</h1>
+            <p className="text-xs text-rehab-200">Rehabilitation Activity & Progress Tracker</p>
           </div>
         </div>
 
@@ -62,14 +62,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
               activeTab === 'config' ? 'bg-rehab-700 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-rehab-800/50'
             }`}
           >
-            <Settings className="w-4 h-4" />
-            <span>Settings</span>
+            <SlidersHorizontal className="w-4 h-4" />
+            <span>Config</span>
           </button>
         </nav>
 
         {/* Right Actions */}
         <div className="flex items-center space-x-3">
-          <span className="text-xs px-2.5 py-1 rounded-full bg-rehab-800/80 text-rehab-200 border border-rehab-700/50">
+          <span className="text-xs px-2.5 py-1 rounded-full bg-rehab-800/80 text-rehab-200 border border-rehab-700/50 font-medium">
             {residentCount} Active Residents
           </span>
           <button

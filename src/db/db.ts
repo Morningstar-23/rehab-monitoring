@@ -16,6 +16,7 @@ db.version(1).stores({
   attendance: 'id, residentId, moduleId, dateAttended, [residentId+moduleId]'
 });
 
+// Auto-seed only if empty on first installation
 db.on('ready', async () => {
   const catCount = await db.categories.count();
   if (catCount === 0) {
@@ -26,19 +27,12 @@ db.on('ready', async () => {
     }));
     await db.modules.bulkAdd(modulesWithIds);
     await db.residents.bulkAdd(SEED_RESIDENTS);
-
-    const initialRecords: AttendanceRecord[] = [
-      { id: 'att_1', residentId: 'res_1', moduleId: 'mod_cat_cbt_1', dateAttended: '2026-04-15', timestamp: Date.now() },
-      { id: 'att_2', residentId: 'res_1', moduleId: 'mod_cat_cbt_3', dateAttended: '2026-05-12', timestamp: Date.now() },
-      { id: 'att_3', residentId: 'res_3', moduleId: 'mod_cat_cbt_3', dateAttended: '2026-04-13', timestamp: Date.now() },
-      { id: 'att_4', residentId: 'res_4', moduleId: 'mod_cat_cbt_3', dateAttended: '2026-04-13', timestamp: Date.now() },
-    ];
-    await db.attendance.bulkAdd(initialRecords);
   }
 });
 
 export { db };
 
+// Attendance Helpers
 export async function toggleAttendance(residentId: string, moduleId: string, dateAttended: string) {
   const existing = await db.attendance
     .where({ residentId, moduleId, dateAttended })
@@ -75,4 +69,19 @@ export async function batchSetAttendance(residentIds: string[], moduleId: string
       await db.attendance.delete(existing.id);
     }
   }
+}
+
+// Reset Database to Clean Production Template
+export async function resetToCleanTemplate() {
+  await db.attendance.clear();
+  await db.residents.clear();
+  await db.modules.clear();
+  await db.categories.clear();
+
+  await db.categories.bulkAdd(SEED_CATEGORIES);
+  const modulesWithIds = SEED_MODULES.map((m, idx) => ({
+    ...m,
+    id: `mod_${m.categoryId}_${idx + 1}`
+  }));
+  await db.modules.bulkAdd(modulesWithIds);
 }
