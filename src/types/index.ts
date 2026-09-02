@@ -1,3 +1,5 @@
+// src/types/index.ts
+
 export interface Category {
   id: string;
   name: string;
@@ -13,6 +15,7 @@ export interface Module {
   name: string;
   sortOrder: number;
   conductedDates: string[]; // ISO YYYY-MM-DD
+  sessionNotes?: Record<string, string>; // Date (YYYY-MM-DD) -> Note text
 }
 
 export interface Resident {

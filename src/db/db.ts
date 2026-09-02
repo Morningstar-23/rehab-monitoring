@@ -1,3 +1,4 @@
+// src/db/db.ts
 import Dexie, { type EntityTable } from 'dexie';
 import type { Category, Module, Resident, AttendanceRecord, MatrixSettings } from '../types';
 import { SEED_CATEGORIES, SEED_MODULES, SEED_RESIDENTS } from './seedData';
@@ -48,7 +49,8 @@ db.on('ready', async () => {
     await db.categories.bulkAdd(SEED_CATEGORIES);
     const modulesWithIds = SEED_MODULES.map((m, idx) => ({
       ...m,
-      id: `mod_${m.categoryId}_${idx + 1}`
+      id: `mod_${m.categoryId}_${idx + 1}`,
+      sessionNotes: {}
     }));
     await db.modules.bulkAdd(modulesWithIds);
     await db.residents.bulkAdd(SEED_RESIDENTS);
@@ -95,6 +97,24 @@ export function getDefaultModuleColWidth() {
   return DEFAULT_MODULE_COL_WIDTH;
 }
 
+// Session Notes Helper: Update note for a specific module on a specific date
+export async function updateModuleSessionNote(moduleId: string, dateStr: string, noteText: string) {
+  const mod = await db.modules.get(moduleId);
+  if (!mod) return;
+
+  const currentNotes = mod.sessionNotes || {};
+  const updatedNotes = { ...currentNotes };
+  const trimmed = noteText.trim();
+
+  if (trimmed) {
+    updatedNotes[dateStr] = trimmed;
+  } else {
+    delete updatedNotes[dateStr];
+  }
+
+  await db.modules.update(moduleId, { sessionNotes: updatedNotes });
+}
+
 // Attendance Helpers
 export async function toggleAttendance(residentId: string, moduleId: string, dateAttended: string) {
   const existing = await db.attendance
@@ -114,7 +134,12 @@ export async function toggleAttendance(residentId: string, moduleId: string, dat
   }
 }
 
-export async function batchSetAttendance(residentIds: string[], moduleId: string, dateAttended: string, attended: boolean) {
+export async function batchSetAttendance(
+  residentIds: string[],
+  moduleId: string,
+  dateAttended: string,
+  attended: boolean
+) {
   for (const residentId of residentIds) {
     const existing = await db.attendance
       .where({ residentId, moduleId, dateAttended })
@@ -144,7 +169,8 @@ export async function resetToCleanTemplate() {
   await db.categories.bulkAdd(SEED_CATEGORIES);
   const modulesWithIds = SEED_MODULES.map((m, idx) => ({
     ...m,
-    id: `mod_${m.categoryId}_${idx + 1}`
+    id: `mod_${m.categoryId}_${idx + 1}`,
+    sessionNotes: {}
   }));
   await db.modules.bulkAdd(modulesWithIds);
 }

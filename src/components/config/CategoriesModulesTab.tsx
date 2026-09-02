@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { Category, Module } from '../../types';
 import { formatToUSDate } from '../../utils/dateUtils';
 import { useSessionStore } from '../../utils/useSessionStore';
-import { db } from '../../db/db';
+import { db, updateModuleSessionNote } from '../../db/db';
 import { SearchBar } from '../SearchBar';
 import { DatePicker } from '../DatePicker';
 import { useConfirm } from '../../context/NotificationProvider';
@@ -15,7 +15,9 @@ import {
   FolderPlus,
   ChevronDown,
   X,
-  ChevronsUpDown
+  ChevronsUpDown,
+  StickyNote,
+  Calendar
 } from 'lucide-react';
 
 interface CategoriesModulesTabProps {
@@ -23,7 +25,6 @@ interface CategoriesModulesTabProps {
   modules: Module[];
 }
 
-// Picks black or white text for best contrast against a given hex background.
 function getContrastTextColor(hex: string): string {
   const clean = hex.replace('#', '');
   const r = parseInt(clean.substring(0, 2), 16) || 0;
@@ -52,7 +53,7 @@ const ModalShell: React.FC<{ onClose: () => void; children: React.ReactNode; max
       exit={{ opacity: 0, scale: 0.96, y: 8 }}
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       onClick={e => e.stopPropagation()}
-      className={`bg-sage-50 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-2xl ${maxWidth} w-full p-6 space-y-4`}
+      className={`bg-sage-50 dark:bg-sage-100 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-2xl ${maxWidth} w-full p-6 space-y-4`}
     >
       {children}
     </motion.div>
@@ -89,6 +90,14 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
   const [targetCategoryForNewMod, setTargetCategoryForNewMod] = useState<string | null>(null);
   const [newModName, setNewModName] = useState('');
   const [editingModule, setEditingModule] = useState<Module | null>(null);
+
+  // Date Note Modal State
+  const [noteModalTarget, setNoteModalTarget] = useState<{
+    moduleId: string;
+    moduleName: string;
+    date: string;
+  } | null>(null);
+  const [noteInputText, setNoteInputText] = useState('');
 
   const sortedCats = useMemo(() => [...categories].sort((a, b) => a.sortOrder - b.sortOrder), [categories]);
   const sortedMods = useMemo(() => [...modules].sort((a, b) => a.sortOrder - b.sortOrder), [modules]);
@@ -163,7 +172,8 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
       categoryId: targetCategoryForNewMod,
       name: newModName.trim(),
       sortOrder: catMods.length + 1,
-      conductedDates: []
+      conductedDates: [],
+      sessionNotes: {}
     });
     setNewModName('');
     setTargetCategoryForNewMod(null);
@@ -211,9 +221,21 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
     const mod = modules.find(m => m.id === moduleId);
     if (!mod) return;
 
+    const nextDates = mod.conductedDates.filter(d => d !== dateStr);
+    const nextNotes = { ...(mod.sessionNotes || {}) };
+    delete nextNotes[dateStr];
+
     await db.modules.update(moduleId, {
-      conductedDates: mod.conductedDates.filter(d => d !== dateStr)
+      conductedDates: nextDates,
+      sessionNotes: nextNotes
     });
+  };
+
+  const handleSaveDateNote = async () => {
+    if (!noteModalTarget) return;
+    await updateModuleSessionNote(noteModalTarget.moduleId, noteModalTarget.date, noteInputText);
+    setNoteModalTarget(null);
+    setNoteInputText('');
   };
 
   return (
@@ -232,7 +254,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={toggleExpandCollapseAll}
-              className="flex items-center space-x-1.5 px-3 py-2 bg-white dark:bg-sage-100 border border-sage-200 dark:border-sage-300 text-sage-700 rounded-xl text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
+              className="flex items-center space-x-1.5 px-3 py-2 bg-white dark:bg-sage-100 border border-sage-200 dark:border-sage-300 text-sage-700 rounded-xl text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors cursor-pointer"
             >
               <ChevronsUpDown className="w-3.5 h-3.5" />
               <span>
@@ -244,7 +266,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               onClick={() => setShowAddCatModal(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-rehab-700 dark:bg-rehab-600 text-white rounded-xl text-xs font-semibold hover:bg-rehab-800 transition-colors shadow-[0_4px_14px_-4px_rgba(28,82,56,0.5)]"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-rehab-700 dark:bg-rehab-600 text-white rounded-xl text-xs font-semibold hover:bg-rehab-800 transition-colors shadow-[0_4px_14px_-4px_rgba(28,82,56,0.5)] cursor-pointer"
             >
               <FolderPlus className="w-3.5 h-3.5" />
               <span>+ Add Category</span>
@@ -259,12 +281,18 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
           </span>
           <button
             onClick={() => setSelectedCategoryFilter('ALL')}
-            className={`relative px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 ${
-              selectedCategoryFilter === 'ALL' ? 'text-white' : 'bg-white dark:bg-sage-100 text-sage-600 border border-sage-200 dark:border-sage-300 hover:bg-sage-100 dark:hover:bg-sage-200'
+            className={`relative px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 cursor-pointer ${
+              selectedCategoryFilter === 'ALL'
+                ? 'text-white'
+                : 'bg-white dark:bg-sage-100 text-sage-600 border border-sage-200 dark:border-sage-300 hover:bg-sage-100 dark:hover:bg-sage-200'
             }`}
           >
             {selectedCategoryFilter === 'ALL' && (
-              <motion.div layoutId="cat-filter-pill" className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />
+              <motion.div
+                layoutId="cat-filter-pill"
+                className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg"
+                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+              />
             )}
             <span className="relative z-10">All Categories ({modules.length})</span>
           </button>
@@ -277,19 +305,29 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryFilter(isSelected ? 'ALL' : cat.id)}
-                className={`relative flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 border ${
-                  isSelected ? 'border-transparent text-white' : 'border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100 text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-200'
+                className={`relative flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 border cursor-pointer ${
+                  isSelected
+                    ? 'border-transparent text-white'
+                    : 'border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100 text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-200'
                 }`}
               >
                 {isSelected && (
-                  <motion.div layoutId="cat-filter-pill" className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />
+                  <motion.div
+                    layoutId="cat-filter-pill"
+                    className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg"
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  />
                 )}
                 <span
                   className="relative z-10 w-2.5 h-2.5 rounded-full border border-white/40 shrink-0"
                   style={{ backgroundColor: cat.colorHex }}
                 />
                 <span className="relative z-10">{cat.name}</span>
-                <span className={`relative z-10 text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-sage-100 dark:bg-sage-200 text-sage-500'}`}>
+                <span
+                  className={`relative z-10 text-[10px] px-1.5 py-0.2 rounded-full ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-sage-100 dark:bg-sage-200 text-sage-500'
+                  }`}
+                >
                   {count}
                 </span>
               </button>
@@ -303,9 +341,10 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
         {filteredCategories.map(cat => {
           const catMods = sortedMods
             .filter(m => m.categoryId === cat.id)
-            .filter(m =>
-              m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+            .filter(
+              m =>
+                m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                cat.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
 
           const isCollapsed = collapsedCategories.has(cat.id) && !searchTerm;
@@ -339,28 +378,28 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                 <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
                   <button
                     onClick={() => setTargetCategoryForNewMod(cat.id)}
-                    className="flex items-center space-x-1 px-3 py-1.5 bg-sage-100 dark:bg-sage-200 hover:bg-sage-200 dark:hover:bg-sage-300 text-sage-700 text-xs font-semibold rounded-lg transition-colors"
+                    className="flex items-center space-x-1 px-3 py-1.5 bg-sage-100 dark:bg-sage-200 hover:bg-sage-200 dark:hover:bg-sage-300 text-sage-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Module</span>
                   </button>
                   <button
                     onClick={() => setEditingCategory(cat)}
-                    className="p-1.5 text-sage-500 hover:text-rehab-700 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg transition-colors"
+                    className="p-1.5 text-sage-500 hover:text-rehab-700 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg transition-colors cursor-pointer"
                     title="Edit Category Title & Color"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(cat.id)}
-                    className="p-1.5 text-sage-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                    className="p-1.5 text-sage-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
                     title="Delete Category"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => toggleCategoryCollapse(cat.id)}
-                    className="p-1.5 text-sage-400 hover:text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg ml-1"
+                    className="p-1.5 text-sage-400 hover:text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg ml-1 cursor-pointer"
                   >
                     <motion.div animate={{ rotate: isCollapsed ? 0 : 180 }} transition={{ duration: 0.2 }}>
                       <ChevronDown className="w-4 h-4" />
@@ -389,59 +428,122 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                           {catMods.map(mod => (
                             <div
                               key={mod.id}
-                              className="bg-sage-50 dark:bg-sage-100 p-3.5 rounded-xl border border-sage-200 dark:border-sage-300 shadow-xs space-y-3 flex flex-col justify-between"
+                              className="bg-sage-50 dark:bg-sage-100 p-4 rounded-2xl border border-sage-200 dark:border-sage-300 shadow-xs space-y-3.5 flex flex-col justify-between"
                             >
-                              <div>
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                  <span className="font-semibold text-xs text-sage-800 leading-snug">
+                              <div className="space-y-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <span className="font-semibold text-xs text-sage-900 leading-snug">
                                     {mod.name}
                                   </span>
                                   <div className="flex items-center space-x-1 shrink-0">
                                     <button
                                       onClick={() => setEditingModule(mod)}
-                                      className="p-1 text-sage-400 hover:text-rehab-700 rounded"
+                                      className="p-1 text-sage-400 hover:text-rehab-700 rounded cursor-pointer"
+                                      title="Edit Module"
                                     >
-                                      <Edit2 className="w-3 h-3" />
+                                      <Edit2 className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteModule(mod.id)}
-                                      className="p-1 text-sage-400 hover:text-red-600 dark:hover:text-red-400 rounded"
+                                      className="p-1 text-sage-400 hover:text-red-600 dark:hover:text-red-400 rounded cursor-pointer"
+                                      title="Delete Module"
                                     >
-                                      <Trash2 className="w-3 h-3" />
+                                      <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
                                 </div>
 
-                                {/* Conducted Dates */}
-                                <div className="space-y-1.5">
-                                  <span className="text-[10px] text-sage-400 font-semibold uppercase tracking-wider block">
-                                    Conducted Dates ({mod.conductedDates?.length || 0}):
-                                  </span>
-                                  <div className="flex flex-wrap gap-1 min-h-6">
+                                {/* Conducted Dates with Large Note Buttons & Direct Previews */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-sage-500 dark:text-sage-400 font-bold uppercase tracking-wider flex items-center space-x-1">
+                                      <Calendar className="w-3 h-3 text-brass-600" />
+                                      <span>Conducted Dates ({mod.conductedDates?.length || 0}):</span>
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-2">
                                     {mod.conductedDates?.length ? (
-                                      mod.conductedDates.map(d => (
-                                        <span
-                                          key={d}
-                                          className="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-sage-100 dark:bg-sage-200 text-sage-700 border border-sage-200 dark:border-sage-300 rounded text-[10px] font-mono"
-                                        >
-                                          <span>{formatToUSDate(d)}</span>
-                                          <button
-                                            onClick={() => handleRemoveDateFromModule(mod.id, d)}
-                                            className="text-sage-400 hover:text-red-500"
+                                      mod.conductedDates.map(d => {
+                                        const noteText = mod.sessionNotes?.[d];
+                                        const hasNote = Boolean(noteText?.trim());
+
+                                        return (
+                                          <div
+                                            key={d}
+                                            className="p-2.5 bg-white dark:bg-sage-200/80 rounded-xl border border-sage-200 dark:border-sage-300 space-y-1.5 shadow-2xs"
                                           >
-                                            <X className="w-2.5 h-2.5" />
-                                          </button>
-                                        </span>
-                                      ))
+                                            <div className="flex items-center justify-between gap-2">
+                                              <span className="font-mono text-xs font-semibold text-sage-800 dark:text-sage-200">
+                                                {formatToUSDate(d)}
+                                              </span>
+
+                                              <div className="flex items-center space-x-1.5">
+                                                {/* Prominent Note Button */}
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setNoteModalTarget({
+                                                      moduleId: mod.id,
+                                                      moduleName: mod.name,
+                                                      date: d
+                                                    });
+                                                    setNoteInputText(mod.sessionNotes?.[d] || '');
+                                                  }}
+                                                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer ${
+                                                    hasNote
+                                                      ? 'bg-brass-100 dark:bg-brass-500/25 text-brass-800 dark:text-brass-300 border border-brass-300/70 hover:bg-brass-200'
+                                                      : 'bg-sage-100 dark:bg-sage-300/60 text-sage-600 dark:text-sage-300 hover:bg-sage-200 border border-sage-200 dark:border-sage-400/40'
+                                                  }`}
+                                                  title="Edit or view note for this session date"
+                                                >
+                                                  <StickyNote className="w-3.5 h-3.5 text-brass-600" />
+                                                  <span>{hasNote ? 'Edit Note' : '+ Add Note'}</span>
+                                                </button>
+
+                                                {/* Remove Date Button */}
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleRemoveDateFromModule(mod.id, d)}
+                                                  className="p-1 text-sage-400 hover:text-red-500 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                                  title="Remove date"
+                                                >
+                                                  <X className="w-3.5 h-3.5" />
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            {/* Note Preview Box */}
+                                            {hasNote && (
+                                              <div
+                                                onClick={() => {
+                                                  setNoteModalTarget({
+                                                    moduleId: mod.id,
+                                                    moduleName: mod.name,
+                                                    date: d
+                                                  });
+                                                  setNoteInputText(mod.sessionNotes?.[d] || '');
+                                                }}
+                                                className="p-2 bg-sage-50 dark:bg-sage-100/70 border border-sage-200/80 dark:border-sage-300/70 rounded-lg text-[11px] text-sage-700 dark:text-sage-300 italic cursor-pointer hover:border-brass-400 transition-colors"
+                                                title="Click to edit full note"
+                                              >
+                                                <p className="line-clamp-2">"{noteText}"</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })
                                     ) : (
-                                      <span className="text-[11px] text-sage-400 italic">No dates added</span>
+                                      <span className="text-[11px] text-sage-400 italic block py-1">
+                                        No dates added yet
+                                      </span>
                                     )}
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Add Date */}
-                              <div className="pt-2 border-t border-sage-100 dark:border-sage-200 flex items-center space-x-1.5">
+                              {/* Add Date Box */}
+                              <div className="pt-2.5 border-t border-sage-100 dark:border-sage-200 flex items-center space-x-1.5">
                                 <div className="flex-1 min-w-0">
                                   <DatePicker
                                     value={moduleDateInputs[mod.id] || ''}
@@ -453,9 +555,9 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                                 </div>
                                 <button
                                   onClick={() => handleAddDateToModule(mod.id)}
-                                  className="px-2.5 py-1 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white rounded-lg text-[11px] font-semibold transition-colors shrink-0"
+                                  className="px-3 py-1.5 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer shadow-2xs"
                                 >
-                                  + Date
+                                  + Add Date
                                 </button>
                               </div>
                             </div>
@@ -471,13 +573,88 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
         })}
       </div>
 
+      {/* Modal: Edit Session Note for a Specific Date */}
+      <AnimatePresence>
+        {noteModalTarget && (
+          <ModalShell onClose={() => setNoteModalTarget(null)} maxWidth="max-w-md">
+            <div className="flex items-center justify-between pb-2 border-b border-sage-200/70 dark:border-sage-300/70">
+              <div className="flex items-center space-x-2">
+                <StickyNote className="w-4 h-4 text-brass-600" />
+                <h3 className="font-display text-base font-semibold text-sage-900">
+                  Session Note
+                </h3>
+              </div>
+              <button
+                onClick={() => setNoteModalTarget(null)}
+                className="text-sage-400 hover:text-sage-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-sage-100/70 dark:bg-sage-200/50 p-3 rounded-xl space-y-1">
+                <div className="text-xs font-semibold text-sage-900">
+                  {noteModalTarget.moduleName}
+                </div>
+                <div className="text-[11px] font-mono text-sage-500">
+                  Date: <span className="font-semibold text-rehab-700">{formatToUSDate(noteModalTarget.date)}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-sage-500 mb-1">
+                  Facilitator Remarks / Topics Covered for this Session:
+                </label>
+                <textarea
+                  rows={4}
+                  value={noteInputText}
+                  onChange={e => setNoteInputText(e.target.value)}
+                  placeholder="e.g. Covered coping mechanisms for relapse triggers. High participation..."
+                  className="w-full text-xs p-3 border border-sage-200 dark:border-sage-300 rounded-xl bg-white dark:bg-sage-200 text-sage-900 font-medium focus:ring-2 focus:ring-brass-500/40"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-between items-center border-t border-sage-200/70 dark:border-sage-300/70">
+              {noteInputText && (
+                <button
+                  type="button"
+                  onClick={() => setNoteInputText('')}
+                  className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+                >
+                  Clear Note
+                </button>
+              )}
+              <div className="flex space-x-2 ml-auto">
+                <button
+                  onClick={() => setNoteModalTarget(null)}
+                  className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={handleSaveDateNote}
+                  className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                >
+                  Save Note
+                </motion.button>
+              </div>
+            </div>
+          </ModalShell>
+        )}
+      </AnimatePresence>
+
       {/* Modal: Add Module to Category */}
       <AnimatePresence>
         {targetCategoryForNewMod && (
           <ModalShell onClose={() => setTargetCategoryForNewMod(null)}>
             <div className="flex items-center justify-between pb-2 border-b border-sage-200/70 dark:border-sage-300/70">
               <h3 className="font-display text-base font-medium text-sage-900">Add Module to Category</h3>
-              <button onClick={() => setTargetCategoryForNewMod(null)} className="text-sage-400 hover:text-sage-600">
+              <button onClick={() => setTargetCategoryForNewMod(null)} className="text-sage-400 hover:text-sage-600 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -496,7 +673,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <div className="pt-2 flex justify-end space-x-2">
               <button
                 onClick={() => setTargetCategoryForNewMod(null)}
-                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -505,7 +682,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                 whileTap={{ scale: newModName.trim() ? 0.96 : 1 }}
                 onClick={handleAddModule}
                 disabled={!newModName.trim()}
-                className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 disabled:opacity-40 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
+                className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 disabled:opacity-40 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
               >
                 Add Module
               </motion.button>
@@ -520,7 +697,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
           <ModalShell onClose={() => setShowAddCatModal(false)}>
             <div className="flex items-center justify-between pb-2 border-b border-sage-200/70 dark:border-sage-300/70">
               <h3 className="font-display text-base font-medium text-sage-900">Create New Category</h3>
-              <button onClick={() => setShowAddCatModal(false)} className="text-sage-400 hover:text-sage-600">
+              <button onClick={() => setShowAddCatModal(false)} className="text-sage-400 hover:text-sage-600 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -554,7 +731,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <div className="pt-2 flex justify-end space-x-2">
               <button
                 onClick={() => setShowAddCatModal(false)}
-                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -563,7 +740,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                 whileTap={{ scale: newCatName.trim() ? 0.96 : 1 }}
                 onClick={handleAddCategory}
                 disabled={!newCatName.trim()}
-                className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 disabled:opacity-40 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
+                className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 disabled:opacity-40 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
               >
                 Create Category
               </motion.button>
@@ -578,7 +755,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
           <ModalShell onClose={() => setEditingCategory(null)} maxWidth="max-w-md">
             <div className="flex items-center justify-between pb-2 border-b border-sage-200/70 dark:border-sage-300/70">
               <h3 className="font-display text-base font-medium text-sage-900">Edit Category Theme</h3>
-              <button onClick={() => setEditingCategory(null)} className="text-sage-400 hover:text-sage-600">
+              <button onClick={() => setEditingCategory(null)} className="text-sage-400 hover:text-sage-600 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -617,7 +794,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                       headerBgHex: editingCategory.colorHex,
                       headerTextHex: getContrastTextColor(editingCategory.colorHex)
                     })}
-                    className="text-[10px] font-semibold text-brass-700 hover:underline"
+                    className="text-[10px] font-semibold text-brass-700 hover:underline cursor-pointer"
                   >
                     Match accent color
                   </button>
@@ -671,7 +848,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <div className="pt-2 flex justify-end space-x-2">
               <button
                 onClick={() => setEditingCategory(null)}
-                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -679,7 +856,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={handleUpdateCategory}
-                className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
+                className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
               >
                 Save
               </motion.button>
@@ -694,7 +871,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
           <ModalShell onClose={() => setEditingModule(null)}>
             <div className="flex items-center justify-between pb-2 border-b border-sage-200/70 dark:border-sage-300/70">
               <h3 className="font-display text-base font-medium text-sage-900">Edit Module Title</h3>
-              <button onClick={() => setEditingModule(null)} className="text-sage-400 hover:text-sage-600">
+              <button onClick={() => setEditingModule(null)} className="text-sage-400 hover:text-sage-600 cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -727,7 +904,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <div className="pt-2 flex justify-end space-x-2">
               <button
                 onClick={() => setEditingModule(null)}
-                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -735,7 +912,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={handleUpdateModule}
-                className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
+                className="px-5 py-2 bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
               >
                 Save
               </motion.button>
