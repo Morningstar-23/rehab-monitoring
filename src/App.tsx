@@ -1,18 +1,16 @@
 // src/App.tsx
-import { useEffect } from 'react';
 import { AnimatePresence, motion, type Transition } from 'motion/react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { check } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
 import { db } from './db/db';
 import { Navbar } from './components/Navbar';
 import { MatrixView } from './components/MatrixView';
 import { BatchLoggingView } from './components/BatchLoggingView';
 import { JournalEntryView } from './components/JournalEntryView';
 import { ConfigView } from './components/ConfigView';
+import { UpdateModal } from './components/ui/UpdateModal';
 import { exportMatrixToExcel } from './utils/excelExport';
 import { useSessionStore } from './utils/useSessionStore';
-import { NotificationProvider, useToast, useConfirm } from './context/NotificationProvider';
+import { NotificationProvider } from './context/NotificationProvider';
 
 const PAGE_VARIANTS = {
   initial: { opacity: 0, y: 6 },
@@ -27,8 +25,6 @@ const PAGE_TRANSITION: Transition = {
 
 function AppContent() {
   const { appActiveTab, configTab, setAppState, setConfigState } = useSessionStore();
-  const toast = useToast();
-  const confirm = useConfirm();
 
   const activeTab = appActiveTab;
   const setActiveTab = (tab: 'matrix' | 'batch' | 'journal' | 'config') =>
@@ -38,33 +34,6 @@ function AppContent() {
   const modules = useLiveQuery(() => db.modules.toArray(), []) || [];
   const residents = useLiveQuery(() => db.residents.toArray(), []) || [];
   const attendance = useLiveQuery(() => db.attendance.toArray(), []) || [];
-
-  // Check for updates from GitHub Releases on application startup
-  useEffect(() => {
-    async function checkForAppUpdates() {
-      try {
-        const update = await check();
-        if (update?.available) {
-          const proceed = await confirm({
-            title: 'Update available',
-            message: `Version ${update.version} is ready to install. Would you like to download and install it now?`,
-            confirmLabel: 'Update Now',
-            cancelLabel: 'Later'
-          });
-          if (proceed) {
-            await update.downloadAndInstall();
-            toast.success('Restarting RehabMonitoring...', 'Update complete');
-            await relaunch();
-          }
-        }
-      } catch (err) {
-        // Silently continue if offline or running in web dev mode
-        console.log('Update check skipped or offline:', err);
-      }
-    }
-
-    checkForAppUpdates();
-  }, []);
 
   const handleExport = () => {
     exportMatrixToExcel(categories, modules, residents, attendance);
@@ -77,6 +46,9 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-sage-50 text-sage-800 flex flex-col transition-colors duration-200">
+      {/* Auto update popup */}
+      <UpdateModal />
+
       <Navbar
         activeTab={activeTab}
         onTabChange={setActiveTab}
