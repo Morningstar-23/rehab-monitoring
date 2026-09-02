@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+// src/components/ConfigView.tsx
+import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import type { Category, Module, Resident } from '../types';
+import { useSessionStore } from '../utils/useSessionStore';
 import { CategoriesModulesTab } from './config/CategoriesModulesTab';
 import { ResidentsTab } from './config/ResidentsTab';
 import { BackupTab } from './config/BackupTab';
@@ -10,62 +13,87 @@ interface ConfigViewProps {
   categories: Category[];
   modules: Module[];
   residents: Resident[];
+  initialTab?: 'modules' | 'residents' | 'backup';
 }
 
-export const ConfigView: React.FC<ConfigViewProps> = ({ categories, modules, residents }) => {
-  const [configTab, setConfigTab] = useState<'modules' | 'residents' | 'backup'>('modules');
+const SUB_TABS: { id: 'modules' | 'residents' | 'backup'; label: string; icon: React.ElementType }[] = [
+  { id: 'modules', label: 'Categories & Modules', icon: Layers },
+  { id: 'residents', label: 'Residents Roster', icon: Users },
+  { id: 'backup', label: 'Data & Backup', icon: Download },
+];
+
+export const ConfigView: React.FC<ConfigViewProps> = ({
+  categories,
+  modules,
+  residents,
+  initialTab
+}) => {
+  // Session Store State (Persists active sub-tab across page navigation)
+  const { configTab, setConfigState } = useSessionStore();
+  const setConfigTab = (tab: 'modules' | 'residents' | 'backup') => setConfigState({ configTab: tab });
+
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (initialTab) {
+      setConfigTab(initialTab);
+    }
+  }, [initialTab]);
+
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="max-w-7xl mx-auto p-6 space-y-6"
+    >
       {/* Top Navigation Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-sm gap-3">
-        <div className="flex space-x-1.5">
-          <button
-            onClick={() => setConfigTab('modules')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              configTab === 'modules'
-                ? 'bg-rehab-700 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>Categories & Modules ({categories.length} / {modules.length})</span>
-          </button>
-
-          <button
-            onClick={() => setConfigTab('residents')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              configTab === 'residents'
-                ? 'bg-rehab-700 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Residents Roster ({residents.length})</span>
-          </button>
-
-          <button
-            onClick={() => setConfigTab('backup')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              configTab === 'backup'
-                ? 'bg-rehab-700 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Download className="w-4 h-4" />
-            <span>Data & Backup</span>
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-sage-100 p-3 rounded-2xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-xs gap-3">
+        <div className="relative flex space-x-1.5">
+          {SUB_TABS.map(({ id, label, icon: Icon }) => {
+            const count =
+              id === 'modules'
+                ? `${categories.length} / ${modules.length}`
+                : id === 'residents'
+                ? `${residents.length}`
+                : null;
+            const isActive = configTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setConfigTab(id)}
+                className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors duration-200 ${
+                  isActive
+                    ? 'text-white'
+                    : 'text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="config-active-pill"
+                    className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-xl shadow-sm"
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <Icon className="w-4 h-4 relative z-10" />
+                <span className="relative z-10">
+                  {label}
+                  {count ? ` (${count})` : ''}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {configTab === 'residents' && (
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-rehab-50 border border-rehab-200 text-rehab-800 rounded-xl text-xs font-semibold hover:bg-rehab-100 transition-all"
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-brass-100/70 dark:bg-brass-200/30 border border-brass-300/60 dark:border-brass-400/40 text-brass-800 dark:text-brass-300 rounded-xl text-xs font-semibold hover:bg-brass-200/60 transition-colors"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>Bulk Paste Residents</span>
-          </button>
+          </motion.button>
         )}
       </div>
 
@@ -78,9 +106,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ categories, modules, res
         <ResidentsTab residents={residents} />
       )}
 
-      {configTab === 'backup' && (
-        <BackupTab />
-      )}
+      {configTab === 'backup' && <BackupTab />}
 
       {/* Smart Import Modal */}
       <SmartImportModal
@@ -88,6 +114,6 @@ export const ConfigView: React.FC<ConfigViewProps> = ({ categories, modules, res
         onClose={() => setIsImportModalOpen(false)}
         existingResidents={residents}
       />
-    </div>
+    </motion.div>
   );
 };

@@ -1,5 +1,8 @@
-import React from 'react';
-import { Leaf, FileSpreadsheet, Users, BookOpen, SlidersHorizontal, Download } from 'lucide-react';
+// src/components/Navbar.tsx
+import React, { useState, useRef, useLayoutEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Leaf, FileSpreadsheet, Users, BookOpen, SlidersHorizontal, Download, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
 
 interface NavbarProps {
   activeTab: 'matrix' | 'batch' | 'journal' | 'config';
@@ -8,77 +11,141 @@ interface NavbarProps {
   residentCount: number;
 }
 
+const TABS: { id: NavbarProps['activeTab']; label: string; icon: React.ElementType }[] = [
+  { id: 'matrix', label: 'Master Matrix', icon: FileSpreadsheet },
+  { id: 'batch', label: 'Batch Session', icon: Users },
+  { id: 'journal', label: 'Resident Journal', icon: BookOpen },
+  { id: 'config', label: 'Config', icon: SlidersHorizontal },
+];
+
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport, residentCount }) => {
+  const { theme, toggleTheme } = useTheme();
+  const navRef = useRef<HTMLElement>(null);
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  // Measure active tab position strictly relative to the <nav> element
+  useLayoutEffect(() => {
+    const updateIndicator = () => {
+      if (!navRef.current) return;
+      const activeBtn = navRef.current.querySelector<HTMLButtonElement>(`[data-tab="${activeTab}"]`);
+      if (activeBtn) {
+        setIndicator({
+          left: activeBtn.offsetLeft,
+          width: activeBtn.offsetWidth,
+        });
+      }
+    };
+
+    updateIndicator();
+    window.addEventListener('resize', updateIndicator);
+    return () => window.removeEventListener('resize', updateIndicator);
+  }, [activeTab]);
+
   return (
-    <header className="bg-rehab-900 border-b border-rehab-800 text-white sticky top-0 z-50 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        
+    <header className="glass-dark sticky top-0 z-50 text-white transition-colors duration-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between">
+
         {/* Brand */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-emerald-500 to-rehab-500 flex items-center justify-center shadow-inner">
+          <motion.div
+            whileHover={{ rotate: -6, scale: 1.05 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rehab-600 to-brass-500 flex items-center justify-center shadow-[0_4px_14px_rgba(176,141,87,0.35)]"
+          >
             <Leaf className="w-5 h-5 text-white stroke-[2.2]" />
-          </div>
+          </motion.div>
           <div>
-            <h1 className="font-semibold text-lg tracking-wide leading-tight text-white">RehabMonitoring</h1>
-            <p className="text-xs text-rehab-200">Rehabilitation Activity & Progress Tracker</p>
+            <h1 className="font-display text-lg tracking-wide leading-tight text-white font-medium">RehabMonitoring</h1>
+            <p className="text-[11px] text-brass-300/90 tracking-wide font-medium">Rehabilitation Activity &amp; Progress Tracker</p>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex space-x-1 bg-rehab-950/60 p-1.5 rounded-xl border border-rehab-800/60">
-          <button
-            onClick={() => onTabChange('matrix')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'matrix' ? 'bg-rehab-700 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-rehab-800/50'
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Master Matrix</span>
-          </button>
+        <nav
+          ref={navRef}
+          className="relative flex space-x-1 bg-black/30 p-1.5 rounded-xl border border-white/10 shadow-inner"
+        >
+          {/* Strictly Horizontal Sliding Pill */}
+          {indicator && (
+            <motion.div
+              className="absolute top-1.5 bottom-1.5 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.3)] pointer-events-none"
+              initial={false}
+              animate={{
+                left: indicator.left,
+                width: indicator.width,
+              }}
+              transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+            />
+          )}
 
-          <button
-            onClick={() => onTabChange('batch')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'batch' ? 'bg-rehab-700 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-rehab-800/50'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Batch Session</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange('journal')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'journal' ? 'bg-rehab-700 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-rehab-800/50'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Resident Journal</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange('config')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'config' ? 'bg-rehab-700 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-rehab-800/50'
-            }`}
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span>Config</span>
-          </button>
+          {TABS.map(({ id, label, icon: Icon }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                data-tab={id}
+                onClick={() => onTabChange(id)}
+                className={`relative z-10 flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 select-none ${
+                  isActive ? 'text-white' : 'text-sage-300 hover:text-white'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </button>
+            );
+          })}
         </nav>
 
         {/* Right Actions */}
-        <div className="flex items-center space-x-3">
-          <span className="text-xs px-2.5 py-1 rounded-full bg-rehab-800/80 text-rehab-200 border border-rehab-700/50 font-medium">
+        <div className="flex items-center space-x-3 pl-3">
+          {/* Active Residents Badge (Original compact size + readable dark mode font) */}
+          <span className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-brass-300 border border-brass-500/30 font-medium select-none whitespace-nowrap">
             {residentCount} Active Residents
           </span>
-          <button
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="relative w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-brass-300 hover:text-white hover:bg-white/10 transition-colors overflow-hidden shadow-2xs"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {theme === 'dark' ? (
+                <motion.span
+                  key="sun"
+                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 flex items-center justify-center text-amber-300"
+                >
+                  <Sun className="w-4 h-4" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="moon"
+                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 flex items-center justify-center text-brass-200"
+                >
+                  <Moon className="w-4 h-4" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
             onClick={onExport}
-            className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium shadow-sm transition-all active:scale-95"
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-gradient-to-r from-brass-600 to-brass-500 text-white text-sm font-medium shadow-[0_2px_10px_rgba(176,141,87,0.35)] transition-opacity hover:opacity-95"
           >
             <Download className="w-4 h-4" />
             <span>Export Excel</span>
-          </button>
+          </motion.button>
         </div>
       </div>
     </header>

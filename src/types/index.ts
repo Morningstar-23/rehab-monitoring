@@ -38,3 +38,12 @@ export interface MatrixRow {
   moduleDates: Record<string, string[]>; // moduleId -> array of YYYY-MM-DD
   socialSupportCount: number;
 }
+
+export interface MatrixSettings {
+  id: string; // always 'global' — single settings row
+  residentDetailsBgHex: string;
+  residentDetailsTextHex: string;
+  sessionsTotalBgHex: string;
+  sessionsTotalTextHex: string;
+  columnWidths: Record<string, number>; // key: 'name' | 'admission' | 'elevation' | moduleId -> px width
+}

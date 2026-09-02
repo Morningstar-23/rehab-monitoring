@@ -1,3 +1,4 @@
+// src/App.tsx
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db/db';
@@ -10,6 +11,7 @@ import { exportMatrixToExcel } from './utils/excelExport';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'matrix' | 'batch' | 'journal' | 'config'>('matrix');
+  const [configSubTab, setConfigSubTab] = useState<'modules' | 'residents' | 'backup'>('modules');
 
   const categories = useLiveQuery(() => db.categories.toArray(), []) || [];
   const modules = useLiveQuery(() => db.modules.toArray(), []) || [];
@@ -20,8 +22,13 @@ export default function App() {
     exportMatrixToExcel(categories, modules, residents, attendance);
   };
 
+  const handleNavigateToConfig = (subTab: 'modules' | 'residents' | 'backup' = 'modules') => {
+    setConfigSubTab(subTab);
+    setActiveTab('config');
+  };
+
   return (
-    <div className="min-h-screen bg-sage-50 text-slate-800 flex flex-col">
+    <div className="min-h-screen bg-sage-50 text-sage-800 flex flex-col transition-colors duration-200">
       <Navbar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -44,6 +51,7 @@ export default function App() {
             modules={modules}
             residents={residents}
             attendance={attendance}
+            onNavigateToConfig={handleNavigateToConfig}
           />
         )}
         {activeTab === 'journal' && (
@@ -59,6 +67,7 @@ export default function App() {
             categories={categories}
             modules={modules}
             residents={residents}
+            initialTab={configSubTab}
           />
         )}
       </main>

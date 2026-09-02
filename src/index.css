@@ -1,39 +1,212 @@
 @import "tailwindcss";
 
-@theme {
-  --color-rehab-50: #f0fdf4;
-  --color-rehab-100: #dcfce7;
-  --color-rehab-200: #bbf7d0;
-  --color-rehab-500: #10b981;
-  --color-rehab-700: #047857;
-  --color-rehab-800: #065f46;
-  --color-rehab-900: #0A2F24;
-  --color-rehab-950: #051E17;
+/* Self-hosted fonts — run: npm i @fontsource/fraunces @fontsource/manrope */
+@import "@fontsource/fraunces/400.css";
+@import "@fontsource/fraunces/500.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/600-italic.css";
+@import "@fontsource/manrope/400.css";
+@import "@fontsource/manrope/500.css";
+@import "@fontsource/manrope/600.css";
+@import "@fontsource/manrope/700.css";
 
-  --color-sage-50: #F4F7F5;
-  --color-sage-100: #E8F0EC;
-  --color-sage-200: #D1E1DA;
-  --color-sage-500: #64748B;
-  --color-sage-800: #1E293B;
+@theme {
+  /* Light Mode Palette */
+  --color-rehab-50: #F3F8F5;
+  --color-rehab-100: #E3EFE8;
+  --color-rehab-200: #CFE0D3;
+  --color-rehab-300: #9EC7AF;
+  --color-rehab-400: #5FA37D;
+  --color-rehab-500: #2F7A54;
+  --color-rehab-600: #256645;
+  --color-rehab-700: #1C5238;
+  --color-rehab-800: #163F2C;
+  --color-rehab-900: #0B2A1F;
+  --color-rehab-950: #04140D;
+
+  --color-brass-50: #FBF7EF;
+  --color-brass-100: #F1E6D2;
+  --color-brass-200: #E4D2AC;
+  --color-brass-300: #D8BD8A;
+  --color-brass-400: #C7A66C;
+  --color-brass-500: #B08D57;
+  --color-brass-600: #8C6B3F;
+  --color-brass-700: #6E5330;
+  --color-brass-800: #503C24;
+  --color-brass-900: #362818;
+  --color-brass-950: #1D150C;
+
+  --color-sage-50: #FAF8F3;
+  --color-sage-100: #F1EEE3;
+  --color-sage-200: #E3DFD0;
+  --color-sage-300: #CFC9B8;
+  --color-sage-400: #A8A395;
+  --color-sage-500: #7A7566;
+  --color-sage-600: #5C594C;
+  --color-sage-700: #454236;
+  --color-sage-800: #262B24;
+  --color-sage-900: #171A15;
+  --color-sage-950: #0D0F0B;
+
+  --font-display: "Fraunces", "Iowan Old Style", ui-serif, serif;
+  --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dark mode palette: Deep charcoal-pine with high-contrast text      */
+/* ------------------------------------------------------------------ */
+.dark {
+  --color-rehab-50: #13241A;
+  --color-rehab-100: #183323;
+  --color-rehab-200: #1E462F;
+  --color-rehab-300: #296847;
+  --color-rehab-400: #348259;
+  --color-rehab-500: #429E6E;
+  --color-rehab-600: #59B885;
+  --color-rehab-700: #78CE9F;
+  --color-rehab-800: #A8E3C3;
+  --color-rehab-900: #D8F4E5;
+  --color-rehab-950: #F1FAF5;
+
+  --color-brass-50: #20180F;
+  --color-brass-100: #2E2214;
+  --color-brass-200: #42321D;
+  --color-brass-300: #70542F;
+  --color-brass-400: #94713E;
+  --color-brass-500: #C7A66C;
+  --color-brass-600: #DAC08E;
+  --color-brass-700: #E6D4AE;
+  --color-brass-800: #F1E5CC;
+  --color-brass-900: #F9F3E6;
+  --color-brass-950: #FCFAF4;
+
+  --color-sage-50: #12161E;
+  --color-sage-100: #1A2029;
+  --color-sage-200: #262E3A;
+  --color-sage-300: #3A4453;
+  --color-sage-400: #64707F;
+  --color-sage-500: #93A0AD;
+  --color-sage-600: #B5C0CB;
+  --color-sage-700: #D2DAE1;
+  --color-sage-800: #E7ECEF;
+  --color-sage-900: #F5F8FA;
+  --color-sage-950: #FBFCFD;
 }
 
 body {
-  @apply bg-sage-50 text-slate-800 antialiased selection:bg-rehab-500 selection:text-white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  @apply bg-sage-50 text-sage-800 antialiased selection:bg-brass-300 selection:text-rehab-950;
+  font-family: var(--font-sans);
   overflow-x: hidden;
+  background-image:
+    radial-gradient(circle at 12% 0%, rgba(47, 122, 84, 0.06), transparent 42%),
+    radial-gradient(circle at 100% 15%, rgba(176, 141, 87, 0.07), transparent 46%);
+  background-attachment: fixed;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+.dark body {
+  background-image:
+    radial-gradient(circle at 12% 0%, rgba(66, 158, 110, 0.08), transparent 42%),
+    radial-gradient(circle at 100% 15%, rgba(199, 166, 108, 0.06), transparent 46%);
+}
+
+/* Automatic Dark Mode Form Elements Control */
+.dark input[type="text"],
+.dark input[type="date"],
+.dark input[type="search"],
+.dark select,
+.dark textarea {
+  background-color: var(--color-sage-100) !important;
+  color: var(--color-sage-800) !important;
+  border-color: var(--color-sage-300) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-sage-500) !important;
+}
+
+.dark select option {
+  background-color: var(--color-sage-100);
+  color: var(--color-sage-800);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+h1, h2, h3, .font-display {
+  letter-spacing: -0.01em;
+}
+
+body {
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark .bg-white {
+  background-color: var(--color-sage-100) !important;
+}
+
+/* Frosted glass */
+.glass-panel {
+  background: rgba(250, 248, 243, 0.75);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(176, 141, 87, 0.2);
+}
+
+.dark .glass-panel {
+  background: rgba(22, 28, 23, 0.88);
+  border: 1px solid rgba(199, 166, 108, 0.25);
+}
+
+.glass-dark {
+  background: rgba(11, 42, 31, 0.92);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid rgba(176, 141, 87, 0.22);
+}
+
+.dark .glass-dark {
+  background: rgba(15, 19, 16, 0.94);
+  border-bottom: 1px solid rgba(199, 166, 108, 0.2);
+}
+
+.hairline-brass {
+  border-color: rgba(176, 141, 87, 0.25);
+}
+
+.dark .hairline-brass {
+  border-color: rgba(199, 166, 108, 0.2);
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #D9D3C2;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--color-brass-500);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #303A31;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brass-500);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brass-500);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
