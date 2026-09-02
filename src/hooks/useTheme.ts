@@ -1,3 +1,4 @@
+// src/hooks/useTheme.ts
 import { useCallback, useEffect, useState } from 'react';
 
 export type Theme = 'light' | 'dark';
@@ -7,7 +8,8 @@ const STORAGE_KEY = 'rehab-monitoring-theme';
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  // Always default to light mode on first launch
+  return 'light';
 }
 
 export function useTheme() {
