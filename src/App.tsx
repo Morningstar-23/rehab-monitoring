@@ -35,8 +35,9 @@ function AppContent() {
   const residents = useLiveQuery(() => db.residents.toArray(), []) || [];
   const attendance = useLiveQuery(() => db.attendance.toArray(), []) || [];
 
+  // Return the result promise so Navbar can display the success toast & path
   const handleExport = () => {
-    exportMatrixToExcel(categories, modules, residents, attendance);
+    return exportMatrixToExcel(categories, modules, residents, attendance);
   };
 
   const handleNavigateToConfig = (subTab: 'modules' | 'residents' | 'backup' = 'modules') => {

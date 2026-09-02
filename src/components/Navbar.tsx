@@ -1,13 +1,25 @@
 // src/components/Navbar.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileSpreadsheet, Users, BookOpen, SlidersHorizontal, Download, Sun, Moon } from 'lucide-react';
+import {
+  FileSpreadsheet,
+  Users,
+  BookOpen,
+  SlidersHorizontal,
+  Download,
+  Sun,
+  Moon,
+  Check,
+  Loader2
+} from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { useToast } from '../context/NotificationProvider';
+import type { ExportResult } from '../utils/excelExport';
 
 interface NavbarProps {
   activeTab: 'matrix' | 'batch' | 'journal' | 'config';
   onTabChange: (tab: 'matrix' | 'batch' | 'journal' | 'config') => void;
-  onExport: () => void;
+  onExport: () => Promise<ExportResult | void> | void;
   residentCount: number;
 }
 
@@ -20,6 +32,47 @@ const TABS: { id: NavbarProps['activeTab']; label: string; icon: React.ElementTy
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport, residentCount }) => {
   const { theme, toggleTheme } = useTheme();
+  const toast = useToast();
+  const [exportState, setExportState] = useState<'idle' | 'loading' | 'success'>('idle');
+
+  const handleExportClick = async () => {
+    if (exportState === 'loading') return;
+    setExportState('loading');
+
+    try {
+      const res = await onExport();
+
+      // Case 1: User cancelled the Save dialog
+      if (res && res.cancelled) {
+        setExportState('idle');
+        toast.info('Export was cancelled.');
+        return;
+      }
+
+      // Case 2: Successful export with path/filename
+      if (res && res.success) {
+        setExportState('success');
+        const displayLocation = res.path ? res.path : res.filename;
+        toast.success(`Saved: ${displayLocation}`, 'Excel Export Complete');
+
+        setTimeout(() => {
+          setExportState('idle');
+        }, 3000);
+        return;
+      }
+
+      // Case 3: onExport was called without returning ExportResult (fallback)
+      setExportState('success');
+      toast.success('Matrix data successfully exported to Excel.', 'Excel Export Complete');
+      setTimeout(() => {
+        setExportState('idle');
+      }, 3000);
+    } catch (err: any) {
+      console.error('Export error:', err);
+      setExportState('idle');
+      toast.error(err?.message || 'Failed to export Excel spreadsheet.', 'Export Error');
+    }
+  };
 
   return (
     <header className="glass-dark sticky top-0 z-50 text-white transition-colors duration-200">
@@ -29,6 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
         <div className="flex items-center space-x-3">
           <motion.div
             whileHover={{ rotate: -4, scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15 }}
             className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/20 shadow-[0_4px_14px_rgba(0,0,0,0.25)] flex items-center justify-center shrink-0 p-1"
           >
@@ -37,7 +91,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
               alt="RehabMonitoring"
               className="w-full h-full object-contain rounded-lg"
               onError={(e) => {
-                // Fallback to favicon or hide broken outline if loading fails
                 (e.target as HTMLImageElement).src = '/favicon.svg';
               }}
             />
@@ -53,11 +106,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
           {TABS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
             return (
-              <button
+              <motion.button
                 key={id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => onTabChange(id)}
-                className={`relative z-10 flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 select-none ${
-                  isActive ? 'text-white' : 'text-sage-300 hover:text-white'
+                className={`relative z-10 flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 select-none cursor-pointer ${
+                  isActive ? 'text-white font-semibold' : 'text-sage-300 hover:text-white'
                 }`}
               >
                 {isActive && (
@@ -69,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
                 )}
                 <Icon className="w-4 h-4 relative z-10" />
                 <span className="relative z-10">{label}</span>
-              </button>
+              </motion.button>
             );
           })}
         </nav>
@@ -80,18 +135,21 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
             {residentCount} Active Residents
           </span>
 
-          <button
+          {/* Theme Toggle Button */}
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="relative w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-brass-300 hover:text-white hover:bg-white/10 transition-colors overflow-hidden shadow-2xs"
+            className="relative w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-brass-300 hover:text-white hover:bg-white/10 transition-colors overflow-hidden shadow-2xs cursor-pointer"
           >
             <AnimatePresence mode="wait" initial={false}>
               {theme === 'dark' ? (
                 <motion.span
                   key="sun"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
+                  initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, rotate: 45 }}
                   transition={{ duration: 0.15 }}
                   className="flex items-center justify-center text-amber-300"
                 >
@@ -100,9 +158,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
               ) : (
                 <motion.span
                   key="moon"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
+                  initial={{ opacity: 0, scale: 0.5, rotate: 45 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, rotate: -45 }}
                   transition={{ duration: 0.15 }}
                   className="flex items-center justify-center text-brass-200"
                 >
@@ -110,15 +168,60 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
                 </motion.span>
               )}
             </AnimatePresence>
-          </button>
+          </motion.button>
 
-          <button
-            onClick={onExport}
-            className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-linear-to-r from-brass-600 to-brass-500 text-white text-sm font-medium shadow-[0_2px_10px_rgba(176,141,87,0.35)] transition-opacity hover:opacity-95"
+          {/* Export Excel Button with Click Feedback & Animations */}
+          <motion.button
+            whileHover={{ scale: exportState === 'loading' ? 1 : 1.03 }}
+            whileTap={{ scale: exportState === 'loading' ? 1 : 0.95 }}
+            onClick={handleExportClick}
+            disabled={exportState === 'loading'}
+            className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-md select-none cursor-pointer overflow-hidden ${
+              exportState === 'success'
+                ? 'bg-emerald-600 text-white shadow-emerald-900/30'
+                : 'bg-linear-to-r from-brass-600 to-brass-500 hover:from-brass-500 hover:to-brass-400 text-white shadow-brass-900/20'
+            }`}
           >
-            <Download className="w-4 h-4" />
-            <span>Export Excel</span>
-          </button>
+            <AnimatePresence mode="wait" initial={false}>
+              {exportState === 'loading' ? (
+                <motion.span
+                  key="loading"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center space-x-2"
+                >
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Preparing...</span>
+                </motion.span>
+              ) : exportState === 'success' ? (
+                <motion.span
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2, type: 'spring' }}
+                  className="flex items-center space-x-2"
+                >
+                  <Check className="w-4 h-4 stroke-3 text-white" />
+                  <span>Exported!</span>
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="idle"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center space-x-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Export Excel</span>
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </div>
       </div>
     </header>
