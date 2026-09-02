@@ -5,6 +5,7 @@ import { isJsonBackup, parseJsonBackup, restoreFullBackup, type BackupPayload } 
 import { formatToUSDate } from '../utils/dateUtils';
 import { db } from '../db/db';
 import type { Resident } from '../types';
+import { useToast, useConfirm } from '../context/NotificationProvider';
 import { Clipboard, CheckCircle, AlertTriangle, X, Upload, Database, Layers, Users, BookOpen } from 'lucide-react';
 
 interface SmartImportModalProps {
@@ -19,6 +20,8 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
   const [detectedBackup, setDetectedBackup] = useState<BackupPayload | null>(null);
   const [isRestoringBackup, setIsRestoringBackup] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   if (!isOpen) return null;
 
@@ -70,27 +73,32 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
     }));
 
     await db.residents.bulkAdd(newRecords);
-    alert(`Imported ${newRecords.length} residents successfully!`);
+    toast.success(`Imported ${newRecords.length} residents successfully.`);
     onClose();
   };
 
   const handleRestoreFullSystemBackup = async () => {
     if (!detectedBackup) return;
 
-    const confirmMsg =
-      '⚠️ Restoring this backup will replace current local database tables with the backup contents (categories, modules, residents & attendance). Proceed?';
-    if (!confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: 'Restore full backup?',
+      message: 'Restoring this backup will replace current local database tables with the backup contents (categories, modules, residents & attendance). Proceed?',
+      variant: 'danger',
+      confirmLabel: 'Restore Backup'
+    });
+    if (!ok) return;
 
     try {
       setIsRestoringBackup(true);
       const res = await restoreFullBackup(detectedBackup);
-      alert(
-        `✅ System successfully restored!\n\n• ${res.categoriesCount} Categories\n• ${res.modulesCount} Modules\n• ${res.residentsCount} Residents\n• ${res.attendanceCount} Attendance Logs`
+      toast.success(
+        `${res.categoriesCount} Categories · ${res.modulesCount} Modules · ${res.residentsCount} Residents · ${res.attendanceCount} Attendance Logs`,
+        'System successfully restored'
       );
       onClose();
     } catch (err) {
       console.error(err);
-      alert('Failed to restore backup: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error(err instanceof Error ? err.message : String(err), 'Failed to restore backup');
     } finally {
       setIsRestoringBackup(false);
     }
@@ -101,13 +109,13 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
       <div className="bg-white dark:bg-sage-100 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-sage-200 dark:border-sage-300">
-          <h3 className="font-display text-base font-semibold text-sage-900 dark:text-sage-100 flex items-center space-x-2">
-            <Clipboard className="w-5 h-5 text-brass-600 dark:text-brass-400" />
+          <h3 className="font-display text-base font-semibold text-sage-900 flex items-center space-x-2">
+            <Clipboard className="w-5 h-5 text-brass-600" />
             <span>Smart Bulk Paste & JSON Backup Restore</span>
           </h3>
           <button
             onClick={onClose}
-            className="text-sage-400 hover:text-sage-600 dark:hover:text-sage-200 p-1 rounded-xl hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
+            className="text-sage-400 hover:text-sage-600 p-1 rounded-xl hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -116,13 +124,13 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
         {/* Input Area */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold text-sage-600 dark:text-sage-300">
+            <label className="block text-xs font-semibold text-sage-600">
               Paste rows from Excel (Name [TAB] Dates) or Full Backup (.json):
             </label>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs font-semibold text-brass-700 dark:text-brass-400 hover:underline flex items-center space-x-1"
+              className="text-xs font-semibold text-brass-700 hover:underline flex items-center space-x-1"
             >
               <Upload className="w-3.5 h-3.5" />
               <span>Upload .json or .csv</span>
@@ -147,7 +155,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
               }
             }}
             placeholder="Paste Excel tab-separated rows OR paste exported backup JSON here..."
-            className="w-full p-3 text-xs font-mono bg-sage-50 dark:bg-sage-200/50 border border-sage-200 dark:border-sage-300 rounded-xl text-sage-900 dark:text-sage-100 placeholder:text-sage-400 dark:placeholder:text-sage-500 focus:outline-none focus:ring-2 focus:ring-brass-500/40"
+            className="w-full p-3 text-xs font-mono bg-sage-50 dark:bg-sage-200/50 border border-sage-200 dark:border-sage-300 rounded-xl text-sage-900 placeholder:text-sage-400 dark:placeholder:text-sage-500 focus:outline-none focus:ring-2 focus:ring-brass-500/40"
           />
 
           <div className="flex items-center space-x-2 pt-1">
@@ -167,13 +175,13 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
           <div className="p-4 rounded-2xl bg-brass-50 dark:bg-brass-500/15 border border-brass-300/70 dark:border-brass-400/30 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Database className="w-4 h-4 text-brass-600 dark:text-brass-400" />
-                <h4 className="text-xs font-bold text-brass-900 dark:text-brass-200">
+                <Database className="w-4 h-4 text-brass-600" />
+                <h4 className="text-xs font-bold text-brass-900">
                   Full System Backup JSON Detected!
                 </h4>
               </div>
               {detectedBackup.exportedAt && (
-                <span className="text-[10px] font-mono text-sage-500 dark:text-sage-400">
+                <span className="text-[10px] font-mono text-sage-500">
                   Exported: {new Date(detectedBackup.exportedAt).toLocaleDateString()}
                 </span>
               )}
@@ -181,35 +189,35 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div className="p-2.5 bg-white dark:bg-sage-200/60 rounded-xl border border-sage-200 dark:border-sage-300 text-center">
-                <Layers className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400 mx-auto mb-0.5" />
-                <div className="font-bold text-xs text-sage-900 dark:text-sage-100">
+                <Layers className="w-3.5 h-3.5 text-brass-600 mx-auto mb-0.5" />
+                <div className="font-bold text-xs text-sage-900">
                   {detectedBackup.categories?.length || 0}
                 </div>
-                <div className="text-[10px] text-sage-500 dark:text-sage-400">Categories</div>
+                <div className="text-[10px] text-sage-500">Categories</div>
               </div>
 
               <div className="p-2.5 bg-white dark:bg-sage-200/60 rounded-xl border border-sage-200 dark:border-sage-300 text-center">
-                <BookOpen className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400 mx-auto mb-0.5" />
-                <div className="font-bold text-xs text-sage-900 dark:text-sage-100">
+                <BookOpen className="w-3.5 h-3.5 text-brass-600 mx-auto mb-0.5" />
+                <div className="font-bold text-xs text-sage-900">
                   {detectedBackup.modules?.length || 0}
                 </div>
-                <div className="text-[10px] text-sage-500 dark:text-sage-400">Modules</div>
+                <div className="text-[10px] text-sage-500">Modules</div>
               </div>
 
               <div className="p-2.5 bg-white dark:bg-sage-200/60 rounded-xl border border-sage-200 dark:border-sage-300 text-center">
-                <Users className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400 mx-auto mb-0.5" />
-                <div className="font-bold text-xs text-sage-900 dark:text-sage-100">
+                <Users className="w-3.5 h-3.5 text-brass-600 mx-auto mb-0.5" />
+                <div className="font-bold text-xs text-sage-900">
                   {detectedBackup.residents?.length || 0}
                 </div>
-                <div className="text-[10px] text-sage-500 dark:text-sage-400">Residents</div>
+                <div className="text-[10px] text-sage-500">Residents</div>
               </div>
 
               <div className="p-2.5 bg-white dark:bg-sage-200/60 rounded-xl border border-sage-200 dark:border-sage-300 text-center">
-                <CheckCircle className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400 mx-auto mb-0.5" />
-                <div className="font-bold text-xs text-sage-900 dark:text-sage-100">
+                <CheckCircle className="w-3.5 h-3.5 text-brass-600 mx-auto mb-0.5" />
+                <div className="font-bold text-xs text-sage-900">
                   {detectedBackup.attendance?.length || 0}
                 </div>
-                <div className="text-[10px] text-sage-500 dark:text-sage-400">Attendance Logs</div>
+                <div className="text-[10px] text-sage-500">Attendance Logs</div>
               </div>
             </div>
 
@@ -232,12 +240,12 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
         {/* Mode B: Resident List Preview */}
         {parsedRows.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-sage-700 dark:text-sage-300">
+            <h4 className="text-xs font-semibold text-sage-700">
               Preview ({parsedRows.length} Rows Detected)
             </h4>
             <div className="max-h-56 overflow-y-auto border border-sage-200 dark:border-sage-300 rounded-xl">
               <table className="w-full text-left text-xs">
-                <thead className="bg-sage-100 dark:bg-sage-200 border-b border-sage-200 dark:border-sage-300 text-sage-700 dark:text-sage-200">
+                <thead className="bg-sage-100 dark:bg-sage-200 border-b border-sage-200 dark:border-sage-300 text-sage-700">
                   <tr>
                     <th className="p-2.5 font-semibold">Name</th>
                     <th className="p-2.5 font-semibold">Admission</th>
@@ -248,9 +256,9 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
                 <tbody className="divide-y divide-sage-200 dark:divide-sage-300">
                   {parsedRows.map((r, i) => (
                     <tr key={i} className="hover:bg-sage-50 dark:hover:bg-sage-200/50">
-                      <td className="p-2.5 font-semibold text-sage-900 dark:text-sage-100">{r.fullName}</td>
-                      <td className="p-2.5 font-mono text-sage-600 dark:text-sage-400">{formatToUSDate(r.admissionDate) || '—'}</td>
-                      <td className="p-2.5 font-mono text-sage-600 dark:text-sage-400">{formatToUSDate(r.elevationDate) || '—'}</td>
+                      <td className="p-2.5 font-semibold text-sage-900">{r.fullName}</td>
+                      <td className="p-2.5 font-mono text-sage-600">{formatToUSDate(r.admissionDate) || '—'}</td>
+                      <td className="p-2.5 font-mono text-sage-600">{formatToUSDate(r.elevationDate) || '—'}</td>
                       <td className="p-2.5">
                         {r.status === 'valid' ? (
                           <span className="inline-flex items-center space-x-1 text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-500/20 px-2 py-0.5 rounded text-[11px] font-medium">
@@ -277,7 +285,7 @@ export const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onCl
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+            className="px-4 py-2 text-xs font-semibold text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
           >
             Cancel
           </button>

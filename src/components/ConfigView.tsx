@@ -65,7 +65,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
                 className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors duration-200 ${
                   isActive
                     ? 'text-white'
-                    : 'text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200'
+                    : 'text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200'
                 }`}
               >
                 {isActive && (
@@ -94,7 +94,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
               transition={{ duration: 0.18 }}
               whileTap={{ scale: 0.96 }}
               onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-brass-100/70 dark:bg-brass-200/30 border border-brass-300/60 dark:border-brass-400/40 text-brass-800 dark:text-brass-300 rounded-xl text-xs font-semibold hover:bg-brass-200/60 transition-colors"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-brass-100/70 dark:bg-brass-200/30 border border-brass-300/60 dark:border-brass-400/40 text-brass-800 rounded-xl text-xs font-semibold hover:bg-brass-200/60 transition-colors"
             >
               <Upload className="w-3.5 h-3.5" />
               <span>Bulk Paste Residents</span>

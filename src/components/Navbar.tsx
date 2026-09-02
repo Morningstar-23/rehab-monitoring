@@ -23,7 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
 
   return (
     <header className="glass-dark sticky top-0 z-50 text-white transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-17 flex items-center justify-between">
 
         {/* Brand */}
         <div className="flex items-center space-x-3">
@@ -34,8 +34,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
           >
             <img
               src="/app-icon.png"
-              alt="App Icon"
+              alt="RehabMonitoring"
               className="w-full h-full object-contain rounded-lg"
+              onError={(e) => {
+                // Fallback to favicon or hide broken outline if loading fails
+                (e.target as HTMLImageElement).src = '/favicon.svg';
+              }}
             />
           </motion.div>
           <div>
@@ -44,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
           </div>
         </div>
 
-        {/* Navigation Tabs (0ms GPU LayoutId Pill) */}
+        {/* Navigation Tabs */}
         <nav className="relative flex space-x-1 bg-black/30 p-1.5 rounded-xl border border-white/10 shadow-inner">
           {TABS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
@@ -110,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
 
           <button
             onClick={onExport}
-            className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-gradient-to-r from-brass-600 to-brass-500 text-white text-sm font-medium shadow-[0_2px_10px_rgba(176,141,87,0.35)] transition-opacity hover:opacity-95"
+            className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-linear-to-r from-brass-600 to-brass-500 text-white text-sm font-medium shadow-[0_2px_10px_rgba(176,141,87,0.35)] transition-opacity hover:opacity-95"
           >
             <Download className="w-4 h-4" />
             <span>Export Excel</span>

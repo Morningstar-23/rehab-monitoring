@@ -154,11 +154,11 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
   const phaseBadgeClass = (phase?: Resident['phaseStatus']) => {
     switch (phase) {
       case 'Junior':
-        return 'bg-brass-100/80 dark:bg-brass-500/20 text-brass-800 dark:text-brass-300 border-brass-300/70 dark:border-brass-400/40';
+        return 'bg-brass-100/80 dark:bg-brass-500/20 text-brass-800 border-brass-300/70 dark:border-brass-400/40';
       case 'Senior':
-        return 'bg-rehab-100/80 dark:bg-rehab-500/20 text-rehab-800 dark:text-rehab-300 border-rehab-500/25';
+        return 'bg-rehab-100/80 dark:bg-rehab-500/20 text-rehab-800 border-rehab-500/25';
       default:
-        return 'bg-sage-100 dark:bg-sage-200 text-sage-600 dark:text-sage-400 border-sage-200 dark:border-sage-300';
+        return 'bg-sage-100 dark:bg-sage-200 text-sage-600 border-sage-200 dark:border-sage-300';
     }
   };
 
@@ -175,14 +175,14 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
       <div className="lg:col-span-4 bg-white dark:bg-sage-100 p-4 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-xs flex flex-col h-full overflow-hidden space-y-3 min-w-0">
         <div className="flex items-center justify-between pb-0.5">
           <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-xl bg-brass-100/70 dark:bg-brass-500/20 text-brass-700 dark:text-brass-400">
+            <div className="p-2 rounded-xl bg-brass-100/70 dark:bg-brass-500/20 text-brass-700">
               <Users className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-display text-sm font-semibold text-sage-900 dark:text-sage-100">
+              <h3 className="font-display text-sm font-semibold text-sage-900">
                 Resident Roster
               </h3>
-              <p className="text-[11px] text-sage-500 dark:text-sage-400 font-medium">
+              <p className="text-[11px] text-sage-500 font-medium">
                 {filteredResidents.length} of {residents.length} residents
               </p>
             </div>
@@ -197,12 +197,12 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
             placeholder="Search resident name..."
             value={residentSearch}
             onChange={e => setResidentSearch(e.target.value)}
-            className="w-full pl-8 pr-8 py-1.5 text-xs bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-xl text-sage-900 dark:text-sage-100 placeholder:text-sage-400 font-medium focus:outline-none focus:ring-2 focus:ring-brass-500/40 focus:border-brass-500"
+            className="w-full pl-8 pr-8 py-1.5 text-xs bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-xl text-sage-900 placeholder:text-sage-400 font-medium focus:outline-none focus:ring-2 focus:ring-brass-500/40 focus:border-brass-500"
           />
           {residentSearch && (
             <button
               onClick={() => setResidentSearch('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 dark:hover:text-sage-200 p-0.5"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 p-0.5"
             >
               <X className="w-3 h-3" />
             </button>
@@ -220,7 +220,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                 className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-all duration-150 ${
                   isActive
                     ? 'bg-rehab-700 dark:bg-rehab-600 text-white font-semibold shadow-xs'
-                    : 'bg-sage-50 dark:bg-sage-200 text-sage-600 dark:text-sage-300 hover:bg-sage-100 dark:hover:bg-sage-300 border border-sage-200/80 dark:border-sage-300/60'
+                    : 'bg-sage-50 dark:bg-sage-200 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-300 border border-sage-200/80 dark:border-sage-300/60'
                 }`}
               >
                 {phase === 'ALL' ? 'All Phases' : phase}
@@ -248,7 +248,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                   className={`relative w-full text-left p-3 rounded-2xl transition-all duration-150 overflow-hidden group ${
                     isSelected
                       ? 'bg-rehab-700 dark:bg-rehab-600 text-white shadow-md'
-                      : 'text-sage-800 dark:text-sage-200 hover:bg-sage-50 dark:hover:bg-sage-200/60'
+                      : 'text-sage-800 hover:bg-sage-50 dark:hover:bg-sage-200/60'
                   }`}
                 >
                   <div className="relative z-10 flex items-start justify-between gap-2">
@@ -259,13 +259,13 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center space-x-2 mt-1 font-mono text-[10px]">
-                        <span className={isSelected ? 'text-white/80' : 'text-sage-500 dark:text-sage-400'}>
+                        <span className={isSelected ? 'text-white/80' : 'text-sage-500'}>
                           Adm: {formatToUSDate(r.admissionDate) || '—'}
                         </span>
                         {r.elevationDate && (
                           <>
                             <span className={isSelected ? 'text-white/40' : 'text-sage-300'}>•</span>
-                            <span className={isSelected ? 'text-white/80' : 'text-sage-500 dark:text-sage-400'}>
+                            <span className={isSelected ? 'text-white/80' : 'text-sage-500'}>
                               Elv: {formatToUSDate(r.elevationDate)}
                             </span>
                           </>
@@ -287,7 +287,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                         className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
                           isSelected
                             ? 'bg-white/25 text-white'
-                            : 'bg-sage-100 dark:bg-sage-200 text-sage-600 dark:text-sage-300'
+                            : 'bg-sage-100 dark:bg-sage-200 text-sage-600'
                         }`}
                         title="Total sessions attended"
                       >
@@ -325,22 +325,22 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-sage-200 dark:border-sage-300 gap-3 shrink-0">
           <div className="space-y-0.5">
             <div className="flex items-center space-x-2">
-              <span className="p-1.5 rounded-lg bg-rehab-100 dark:bg-rehab-500/20 text-rehab-800 dark:text-rehab-300">
+              <span className="p-1.5 rounded-lg bg-rehab-100 dark:bg-rehab-500/20 text-rehab-800">
                 <BookOpen className="w-4 h-4" />
               </span>
-              <h2 className="font-display text-lg font-semibold text-sage-900 dark:text-sage-100 leading-none">
+              <h2 className="font-display text-lg font-semibold text-sage-900 leading-none">
                 {selectedResident ? selectedResident.fullName : 'Select a Resident'}
               </h2>
             </div>
-            <p className="text-xs text-sage-500 dark:text-sage-400 pl-8">
+            <p className="text-xs text-sage-500 pl-8">
               Transcribe attended dates from physical journal notebook into module records
             </p>
           </div>
 
           <div className="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
             <div className="px-3.5 py-1.5 bg-rehab-50 dark:bg-rehab-500/10 border border-rehab-500/25 rounded-xl flex items-center space-x-2">
-              <Sparkles className="w-3.5 h-3.5 text-rehab-600 dark:text-rehab-400" />
-              <span className="text-xs font-semibold text-rehab-900 dark:text-rehab-300 font-mono">
+              <Sparkles className="w-3.5 h-3.5 text-rehab-600" />
+              <span className="text-xs font-semibold text-rehab-900 font-mono">
                 {totalSessionsLogged} Total Sessions Logged
               </span>
             </div>
@@ -357,12 +357,12 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                 placeholder="Search modules by topic or name (e.g. Triggers, Relapse)..."
                 value={moduleSearch}
                 onChange={e => setModuleSearch(e.target.value)}
-                className="w-full pl-8 pr-8 py-1.5 text-xs bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-xl text-sage-900 dark:text-sage-100 placeholder:text-sage-400 font-medium focus:outline-none focus:ring-2 focus:ring-brass-500/40 focus:border-brass-500"
+                className="w-full pl-8 pr-8 py-1.5 text-xs bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-xl text-sage-900 placeholder:text-sage-400 font-medium focus:outline-none focus:ring-2 focus:ring-brass-500/40 focus:border-brass-500"
               />
               {moduleSearch && (
                 <button
                   onClick={() => setModuleSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 dark:hover:text-sage-200 p-0.5"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 p-0.5"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -371,7 +371,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
 
             <button
               onClick={toggleExpandCollapseAll}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-700 dark:text-sage-300 rounded-xl text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 transition-colors shrink-0 shadow-2xs"
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-700 rounded-xl text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 transition-colors shrink-0 shadow-2xs"
             >
               <ChevronsUpDown className="w-3.5 h-3.5" />
               <span>
@@ -383,7 +383,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
           {/* Fully Scrollable Category Legend Filter Pills */}
           <div className="w-full min-w-0 overflow-x-auto pb-1.5 pt-0.5 flex items-center gap-1.5 scrollbar-thin">
             <span className="text-[11px] font-semibold text-sage-400 uppercase tracking-wider mr-1 shrink-0 flex items-center space-x-1">
-              <Layers className="w-3 h-3 text-brass-600 dark:text-brass-400" />
+              <Layers className="w-3 h-3 text-brass-600" />
               <span>Categories:</span>
             </span>
 
@@ -392,7 +392,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 whitespace-nowrap shrink-0 ${
                 selectedCatFilter === 'ALL'
                   ? 'bg-rehab-700 dark:bg-rehab-600 text-white shadow-xs'
-                  : 'bg-sage-50 dark:bg-sage-200 text-sage-600 dark:text-sage-300 border border-sage-200 dark:border-sage-300 hover:bg-sage-100 dark:hover:bg-sage-300'
+                  : 'bg-sage-50 dark:bg-sage-200 text-sage-600 border border-sage-200 dark:border-sage-300 hover:bg-sage-100 dark:hover:bg-sage-300'
               }`}
             >
               All Categories ({modules.length})
@@ -409,7 +409,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                   className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 border whitespace-nowrap shrink-0 ${
                     isSelected
                       ? 'bg-rehab-700 dark:bg-rehab-600 text-white border-transparent shadow-xs'
-                      : 'border-sage-200 dark:border-sage-300 bg-sage-50 dark:bg-sage-200 text-sage-700 dark:text-sage-300 hover:bg-sage-100 dark:hover:bg-sage-300'
+                      : 'border-sage-200 dark:border-sage-300 bg-sage-50 dark:bg-sage-200 text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-300'
                   }`}
                 >
                   <span
@@ -421,7 +421,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                       isSelected
                         ? 'bg-white/20 text-white'
-                        : 'bg-sage-200/80 dark:bg-sage-300/80 text-sage-600 dark:text-sage-300'
+                        : 'bg-sage-200/80 dark:bg-sage-300/80 text-sage-600'
                     }`}
                   >
                     {count}
@@ -471,10 +471,10 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                         className="w-3.5 h-3.5 rounded-full border border-white shadow-xs shrink-0"
                         style={{ backgroundColor: cat.colorHex }}
                       />
-                      <h4 className="font-display font-semibold text-sm text-sage-900 dark:text-sage-100 truncate">
+                      <h4 className="font-display font-semibold text-sm text-sage-900 truncate">
                         {cat.name}
                       </h4>
-                      <span className="text-[11px] font-mono text-sage-500 dark:text-sage-400 font-medium shrink-0">
+                      <span className="text-[11px] font-mono text-sage-500 font-medium shrink-0">
                         ({catMods.length} Modules)
                       </span>
                     </div>
@@ -491,7 +491,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                         {catAttendedSessions} Sessions
                       </span>
                       <motion.div animate={{ rotate: isCollapsed ? 0 : 180 }} transition={{ duration: 0.2 }}>
-                        <ChevronDown className="w-4 h-4 text-sage-500 dark:text-sage-400" />
+                        <ChevronDown className="w-4 h-4 text-sage-500" />
                       </motion.div>
                     </div>
                   </div>
@@ -522,7 +522,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                 >
                                   <div className="space-y-2">
                                     <div className="flex items-start justify-between gap-2">
-                                      <span className="font-semibold text-xs text-sage-900 dark:text-sage-100 leading-snug">
+                                      <span className="font-semibold text-xs text-sage-900 leading-snug">
                                         {mod.name}
                                       </span>
                                       <span
@@ -537,13 +537,13 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                       </span>
                                     </div>
 
-                                    <div className="min-h-[26px]">
+                                    <div className="min-h-6.5">
                                       {attendedDates.length > 0 ? (
                                         <div className="flex flex-wrap gap-1.5">
                                           {attendedDates.map(d => (
                                             <span
                                               key={d}
-                                              className="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-rehab-100/90 dark:bg-rehab-500/25 text-rehab-900 dark:text-rehab-300 border border-rehab-500/30 text-[11px] font-mono font-semibold rounded-lg shadow-2xs"
+                                              className="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-rehab-100/90 dark:bg-rehab-500/25 text-rehab-900 border border-rehab-500/30 text-[11px] font-mono font-semibold rounded-lg shadow-2xs"
                                             >
                                               <span>{formatToUSDate(d)}</span>
                                               <button
@@ -552,7 +552,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                                   selectedResident &&
                                                   toggleAttendance(selectedResident.id, mod.id, d)
                                                 }
-                                                className="text-rehab-700 dark:text-rehab-400 hover:text-red-600 dark:hover:text-red-400 p-0.5"
+                                                className="text-rehab-700 hover:text-red-600 dark:hover:text-red-400 p-0.5"
                                                 title="Remove attended date"
                                               >
                                                 <X className="w-3 h-3" />
@@ -571,8 +571,8 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                   <div className="pt-2.5 border-t border-sage-100 dark:border-sage-200/70 space-y-2">
                                     {mod.conductedDates && mod.conductedDates.length > 0 && (
                                       <div className="space-y-1">
-                                        <span className="text-[10px] font-semibold text-sage-400 uppercase tracking-wider block flex items-center space-x-1">
-                                          <Calendar className="w-3 h-3 text-brass-600 dark:text-brass-400" />
+                                        <span className="text-[10px] font-semibold text-sage-400 uppercase tracking-wider block items-center space-x-1">
+                                          <Calendar className="w-3 h-3 text-brass-600" />
                                           <span>Pre-Scheduled:</span>
                                         </span>
                                         <div className="flex flex-wrap gap-1">
@@ -589,10 +589,10 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                                 className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-semibold border flex items-center space-x-1 transition-all ${
                                                   isAttended
                                                     ? 'bg-rehab-700 dark:bg-rehab-600 text-white border-rehab-800 dark:border-rehab-500 shadow-2xs'
-                                                    : 'bg-sage-50 dark:bg-sage-200 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-300 hover:border-brass-400'
+                                                    : 'bg-sage-50 dark:bg-sage-200 text-sage-700 border-sage-200 dark:border-sage-300 hover:border-brass-400'
                                                 }`}
                                               >
-                                                {isAttended && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                                                {isAttended && <Check className="w-2.5 h-2.5 stroke-3" />}
                                                 <span>{formatToUSDate(cd)}</span>
                                               </button>
                                             );

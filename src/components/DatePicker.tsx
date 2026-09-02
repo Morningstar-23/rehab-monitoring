@@ -482,13 +482,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           {/* Header: Month & Year Selector */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1.5">
-              <span className="font-display font-semibold text-sm text-sage-900 dark:text-sage-100">
+              <span className="font-display font-semibold text-sm text-sage-900">
                 {MONTH_NAMES[viewMonth]}
               </span>
               <select
                 value={viewYear}
                 onChange={e => setViewYear(Number(e.target.value))}
-                className="bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-lg px-1.5 py-0.5 text-xs font-semibold text-sage-900 dark:text-sage-100 focus:outline-none cursor-pointer"
+                className="bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-lg px-1.5 py-0.5 text-xs font-semibold text-sage-900 focus:outline-none cursor-pointer"
               >
                 {Array.from({ length: 35 }, (_, i) => new Date().getFullYear() - 15 + i).map(y => (
                   <option key={y} value={y}>
@@ -502,14 +502,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               <button
                 type="button"
                 onClick={prevMonth}
-                className="p-1 rounded-lg hover:bg-sage-100 dark:hover:bg-sage-200 text-sage-600 dark:text-sage-300 transition-colors"
+                className="p-1 rounded-lg hover:bg-sage-100 dark:hover:bg-sage-200 text-sage-600 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={nextMonth}
-                className="p-1 rounded-lg hover:bg-sage-100 dark:hover:bg-sage-200 text-sage-600 dark:text-sage-300 transition-colors"
+                className="p-1 rounded-lg hover:bg-sage-100 dark:hover:bg-sage-200 text-sage-600 transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -547,8 +547,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     isSelected
                       ? 'bg-rehab-700 dark:bg-rehab-600 text-white shadow-xs'
                       : isScheduled
-                      ? 'bg-brass-100/70 dark:bg-brass-200/30 text-brass-900 dark:text-brass-200 hover:bg-brass-200 dark:hover:bg-brass-300 border border-brass-300/50'
-                      : 'text-sage-700 dark:text-sage-200 hover:bg-sage-100 dark:hover:bg-sage-200'
+                      ? 'bg-brass-100/70 dark:bg-brass-200/30 text-brass-900 hover:bg-brass-200 dark:hover:bg-brass-300 border border-brass-300/50'
+                      : 'text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-200'
                   }`}
                 >
                   <span>{dNum}</span>
@@ -567,7 +567,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 <button
                   type="button"
                   onClick={handleSetToday}
-                  className="text-brass-700 dark:text-brass-400 hover:underline"
+                  className="text-brass-700 hover:underline"
                 >
                   Today
                 </button>
@@ -593,7 +593,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     <div className={`relative inline-block ${className}`} ref={containerRef}>
       {/* Segmented Input Wrapper */}
       <div
-        className={`w-full bg-white dark:bg-sage-100 border border-sage-200 dark:border-sage-300 font-mono text-sage-900 dark:text-sage-100 flex items-center justify-between shadow-2xs focus-within:ring-2 focus-within:ring-brass-500/40 focus-within:border-brass-500 transition-all ${
+        className={`w-full bg-white dark:bg-sage-100 border border-sage-200 dark:border-sage-300 font-mono text-sage-900 flex items-center justify-between shadow-2xs focus-within:ring-2 focus-within:ring-brass-500/40 focus-within:border-brass-500 transition-all ${
           disabled ? 'opacity-40 cursor-not-allowed' : ''
         } ${sizeStyles[size].wrapper}`}
       >
@@ -609,7 +609,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             onKeyDown={handleMonthKeyDown}
             onFocus={e => e.target.select()}
             placeholder="mm"
-            className={`text-center bg-transparent focus:outline-none focus:bg-brass-100/40 dark:focus:bg-brass-500/20 rounded font-mono font-medium text-sage-900 dark:text-sage-100 placeholder:text-sage-400 placeholder:font-normal ${sizeStyles[size].month}`}
+            className={`text-center bg-transparent focus:outline-none focus:bg-brass-100/40 dark:focus:bg-brass-500/20 rounded font-mono font-medium text-sage-900 placeholder:text-sage-400 placeholder:font-normal ${sizeStyles[size].month}`}
           />
           <span className="text-sage-400 font-mono select-none">/</span>
 
@@ -623,7 +623,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             onKeyDown={handleDayKeyDown}
             onFocus={e => e.target.select()}
             placeholder="dd"
-            className={`text-center bg-transparent focus:outline-none focus:bg-brass-100/40 dark:focus:bg-brass-500/20 rounded font-mono font-medium text-sage-900 dark:text-sage-100 placeholder:text-sage-400 placeholder:font-normal ${sizeStyles[size].day}`}
+            className={`text-center bg-transparent focus:outline-none focus:bg-brass-100/40 dark:focus:bg-brass-500/20 rounded font-mono font-medium text-sage-900 placeholder:text-sage-400 placeholder:font-normal ${sizeStyles[size].day}`}
           />
           <span className="text-sage-400 font-mono select-none">/</span>
 
@@ -637,7 +637,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             onKeyDown={handleYearKeyDown}
             onFocus={e => e.target.select()}
             placeholder="yyyy"
-            className={`text-center bg-transparent focus:outline-none focus:bg-brass-100/40 dark:focus:bg-brass-500/20 rounded font-mono font-medium text-sage-900 dark:text-sage-100 placeholder:text-sage-400 placeholder:font-normal ${sizeStyles[size].year}`}
+            className={`text-center bg-transparent focus:outline-none focus:bg-brass-100/40 dark:focus:bg-brass-500/20 rounded font-mono font-medium text-sage-900 placeholder:text-sage-400 placeholder:font-normal ${sizeStyles[size].year}`}
           />
         </div>
 
@@ -658,7 +658,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             type="button"
             disabled={disabled}
             onClick={() => setIsOpen(prev => !prev)}
-            className={`rounded-lg text-brass-600 dark:text-brass-400 hover:bg-sage-100 dark:hover:bg-sage-200 focus:outline-none transition-colors ${
+            className={`rounded-lg text-brass-600 hover:bg-sage-100 dark:hover:bg-sage-200 focus:outline-none transition-colors ${
               sizeStyles[size].btn
             } ${isOpen ? 'bg-sage-100 dark:bg-sage-200 text-brass-700' : ''}`}
             title="Open calendar picker"

@@ -50,7 +50,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-1.5 rounded-lg border border-sage-200 dark:border-sage-300 text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+          className="p-1.5 rounded-lg border border-sage-200 dark:border-sage-300 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -65,7 +65,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
                   currentPage === page
                     ? 'bg-rehab-700 dark:bg-rehab-600 text-white shadow-xs'
-                    : 'text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 border border-sage-200 dark:border-sage-300'
+                    : 'text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 border border-sage-200 dark:border-sage-300'
                 }`}
               >
                 {page}
@@ -76,7 +76,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages || totalPages === 0}
-          className="p-1.5 rounded-lg border border-sage-200 dark:border-sage-300 text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+          className="p-1.5 rounded-lg border border-sage-200 dark:border-sage-300 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>

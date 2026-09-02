@@ -16,7 +16,7 @@ import {
 } from '../db/db';
 import { Pagination } from './Pagination';
 import { DatePicker } from './DatePicker';
-import { Search, Plus, X, Palette, RotateCcw, GripVertical, Check, Calendar, CalendarPlus, Pin, PinOff } from 'lucide-react';
+import { Search, Plus, X, Palette, RotateCcw, GripVertical, Check, Calendar, CalendarPlus, Pin, PinOff, Users } from 'lucide-react';
 
 interface MatrixViewProps {
   categories: Category[];
@@ -44,6 +44,7 @@ function getContrastTextColor(hexColor?: string, fallback = '#171A15'): string {
 // ----------------------------------------------------------------------
 interface MatrixRowProps {
   resident: Resident;
+  index: number;
   sortedCats: Category[];
   catModuleMap: Map<string, Module[]>;
   attMap: Map<string, string[]>;
@@ -53,8 +54,14 @@ interface MatrixRowProps {
   onCellClick: (residentId: string, moduleId: string) => void;
 }
 
+// Row entrance: quick fade + rise, staggered by row index. Delay is capped so
+// long pages (50-100+ rows) don't leave late rows waiting nearly a second.
+const ROW_STAGGER_STEP = 0.018;
+const ROW_STAGGER_MAX_DELAY = 0.35;
+
 const MatrixRowItem = memo<MatrixRowProps>(({
   resident,
+  index,
   sortedCats,
   catModuleMap,
   attMap,
@@ -66,10 +73,18 @@ const MatrixRowItem = memo<MatrixRowProps>(({
   let attendedTotal = 0;
 
   return (
-    <tr className="hover:bg-sage-100/70 dark:hover:bg-sage-200/50 transition-colors">
+    <motion.tr
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.22,
+        delay: Math.min(index * ROW_STAGGER_STEP, ROW_STAGGER_MAX_DELAY),
+        ease: [0.22, 1, 0.36, 1]
+      }}
+      className="hover:bg-sage-100/70 dark:hover:bg-sage-200/50 transition-colors">
       {/* Name */}
       <td
-        className="sticky z-20 p-2.5 font-medium text-sage-900 dark:text-sage-100 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100"
+        className="sticky z-20 p-2.5 font-medium text-sage-900 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100"
         style={{ left: offsets.nameLeft }}
       >
         <div className="truncate font-semibold text-xs" title={resident.fullName}>
@@ -79,7 +94,7 @@ const MatrixRowItem = memo<MatrixRowProps>(({
 
       {/* Admission */}
       <td
-        className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100' : 'bg-white dark:bg-sage-100'} p-2 text-center text-sage-700 dark:text-sage-200 font-mono text-xs border-r border-b border-sage-200 dark:border-sage-300`}
+        className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100' : 'bg-white dark:bg-sage-100'} p-2 text-center text-sage-700 font-mono text-xs border-r border-b border-sage-200 dark:border-sage-300`}
         style={{ left: stickDates ? offsets.admissionLeft : undefined }}
       >
         <div className="truncate font-medium">
@@ -89,7 +104,7 @@ const MatrixRowItem = memo<MatrixRowProps>(({
 
       {/* Elevation */}
       <td
-        className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100' : 'bg-white dark:bg-sage-100'} p-2 text-center text-sage-700 dark:text-sage-200 font-mono text-xs border-r border-b border-sage-300 dark:border-sage-400`}
+        className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100' : 'bg-white dark:bg-sage-100'} p-2 text-center text-sage-700 font-mono text-xs border-r border-b border-sage-300 dark:border-sage-400`}
         style={{ left: stickDates ? offsets.elevationLeft : undefined }}
       >
         <div className="truncate font-medium">
@@ -152,7 +167,7 @@ const MatrixRowItem = memo<MatrixRowProps>(({
           {attendedTotal}
         </span>
       </td>
-    </tr>
+    </motion.tr>
   );
 });
 
@@ -355,31 +370,31 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
             placeholder="Search resident name..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-lg text-sage-900 dark:text-sage-100 focus:outline-none focus:ring-2 focus:ring-brass-500/40 focus:border-brass-500 font-medium placeholder:text-sage-400"
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-lg text-sage-900 focus:outline-none focus:ring-2 focus:ring-brass-500/40 focus:border-brass-500 font-medium placeholder:text-sage-400"
           />
         </div>
 
         <div className="flex items-center space-x-2.5">
-          <div className="text-xs text-sage-500 dark:text-sage-400 font-medium">
-            Showing <span className="font-semibold text-rehab-800 dark:text-rehab-400">{filteredResidents.length}</span> of {residents.length} residents
+          <div className="text-xs text-sage-500 font-medium">
+            Showing <span className="font-semibold text-rehab-800">{filteredResidents.length}</span> of {residents.length} residents
           </div>
 
           <div className="w-px h-4 bg-sage-200 dark:bg-sage-300" />
 
           <button
             onClick={() => setStickDates(v => !v)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 dark:text-sage-100 rounded-lg text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 shadow-2xs transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 rounded-lg text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 shadow-2xs transition-colors"
           >
-            {stickDates ? <Pin className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400" /> : <PinOff className="w-3.5 h-3.5 text-sage-400" />}
+            {stickDates ? <Pin className="w-3.5 h-3.5 text-brass-600" /> : <PinOff className="w-3.5 h-3.5 text-sage-400" />}
             <span>{stickDates ? 'Sticky: Full Details' : 'Sticky: Name Only'}</span>
           </button>
 
           <div className="relative">
             <button
               onClick={() => setShowColorPanel(v => !v)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 dark:text-sage-100 rounded-lg text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 shadow-2xs transition-colors"
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 rounded-lg text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 shadow-2xs transition-colors"
             >
-              <Palette className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400" />
+              <Palette className="w-3.5 h-3.5 text-brass-600" />
               <span>Cell Colors</span>
             </button>
 
@@ -393,14 +408,14 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   className="absolute z-50 top-full right-0 mt-2 w-80 glass-panel shadow-2xl rounded-2xl p-4 text-left border border-sage-200 dark:border-sage-300 space-y-3.5"
                 >
                   <div className="flex items-center justify-between pb-2 border-b border-sage-200 dark:border-sage-300">
-                    <span className="font-display font-medium text-sage-900 dark:text-sage-100 text-sm">Matrix Header Colors</span>
+                    <span className="font-display font-medium text-sage-900 text-sm">Matrix Header Colors</span>
                     <button onClick={() => setShowColorPanel(false)} className="text-sage-400 hover:text-sage-600">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
                   <div>
-                    <span className="block text-[11px] font-semibold text-sage-500 dark:text-sage-400 mb-1.5">Resident Details Headers</span>
+                    <span className="block text-[11px] font-semibold text-sage-500 mb-1.5">Resident Details Headers</span>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5">
                         <input
@@ -428,7 +443,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   </div>
 
                   <div>
-                    <span className="block text-[11px] font-semibold text-sage-500 dark:text-sage-400 mb-1.5">Sessions Total Header</span>
+                    <span className="block text-[11px] font-semibold text-sage-500 mb-1.5">Sessions Total Header</span>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5">
                         <input
@@ -459,7 +474,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                     <button
                       type="button"
                       onClick={handleResetColors}
-                      className="text-xs text-brass-700 dark:text-brass-300 hover:underline flex items-center space-x-1 font-semibold"
+                      className="text-xs text-brass-700 hover:underline flex items-center space-x-1 font-semibold"
                     >
                       <RotateCcw className="w-3 h-3" />
                       <span>Reset Default Colors</span>
@@ -473,9 +488,9 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
 
           <button
             onClick={handleResetWidths}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 dark:text-sage-100 rounded-lg text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 shadow-2xs transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 rounded-lg text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 shadow-2xs transition-colors"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-sage-500 dark:text-sage-300" />
+            <RotateCcw className="w-3.5 h-3.5 text-sage-500" />
             <span>Reset Widths</span>
           </button>
         </div>
@@ -506,7 +521,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
             </colgroup>
 
             <thead className="sticky top-0 z-30">
-              <tr className="h-[38px]">
+              <tr className="h-9.5">
                 {stickDates ? (
                   <th
                     colSpan={3}
@@ -575,9 +590,9 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                 </th>
               </tr>
 
-              <tr className="h-[42px]">
+              <tr className="h-10.5">
                 <th
-                  className="sticky z-40 px-2.5 font-semibold text-left border-r border-b border-sage-300 dark:border-sage-400 relative select-none"
+                  className="sticky z-40 px-2.5 font-semibold text-left border-r border-b border-sage-300 dark:border-sage-400 select-none"
                   style={{
                     left: offsets.nameLeft,
                     backgroundColor: settings.residentDetailsBgHex,
@@ -635,7 +650,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                       className="px-2 font-semibold text-center border-r border-b border-sage-300 dark:border-sage-400 relative select-none"
                       style={{ backgroundColor: bg, color: text }}
                     >
-                      <span className="block leading-snug break-words text-[11px] line-clamp-2" title={mod.name}>
+                      <span className="block leading-snug wrap-break-word text-[11px] line-clamp-2" title={mod.name}>
                         {mod.name}
                       </span>
                       <div
@@ -659,34 +674,70 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
             </thead>
 
             <tbody>
-              {!isHydrated ? (
-                // Clean Skeleton rows during the 120ms entrance transition
+              {filteredResidents.length === 0 ? (
+                // Definitively empty — either no residents exist yet, or the
+                // search matched nothing. Known synchronously, so no skeleton
+                // flash: go straight to a real empty state instead of faking
+                // a load for data that was never coming.
+                // The row still needs to occupy real height (so the table/
+                // scroll container has something to lay out), but the actual
+                // message is rendered as a separate overlay anchored to the
+                // scroll viewport itself (see below) — that's the only way
+                // for it to stay centered through the full scroll range,
+                // since `sticky` inside a fixed-layout table cell tracks the
+                // cell's box, not the viewport, and drifts at the far edges.
+                <tr>
+                  <td colSpan={3 + sortedMods.length + 1} className="p-0 border-b border-sage-200 dark:border-sage-300 h-55" />
+                </tr>
+              ) : !isHydrated ? (
+                // Skeleton rows during the 120ms entrance transition.
+                // Padding, borders, and sticky offsets mirror MatrixRowItem
+                // exactly so row height/position doesn't jump when real data lands.
                 Array.from({ length: 12 }).map((_, idx) => (
                   <tr key={idx} className="animate-pulse">
-                    <td className="p-3 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
+                    {/* Name */}
+                    <td
+                      className="sticky z-20 p-2.5 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100"
+                      style={{ left: offsets.nameLeft }}
+                    >
                       <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-28" />
                     </td>
-                    <td className="p-3 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
-                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-16 mx-auto" />
+
+                    {/* Admission */}
+                    <td
+                      className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100' : 'bg-white dark:bg-sage-100'} p-2 border-r border-b border-sage-200 dark:border-sage-300`}
+                      style={{ left: stickDates ? offsets.admissionLeft : undefined }}
+                    >
+                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-14 mx-auto" />
                     </td>
-                    <td className="p-3 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
-                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-16 mx-auto" />
+
+                    {/* Elevation */}
+                    <td
+                      className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100' : 'bg-white dark:bg-sage-100'} p-2 border-r border-b border-sage-300 dark:border-sage-400`}
+                      style={{ left: stickDates ? offsets.elevationLeft : undefined }}
+                    >
+                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-14 mx-auto" />
                     </td>
+
+                    {/* Modules */}
                     {sortedMods.map(m => (
-                      <td key={m.id} className="p-3 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
-                        <div className="h-3 bg-sage-200/50 dark:bg-sage-300/40 rounded w-7 mx-auto" />
+                      <td key={m.id} className="p-1.5 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
+                        <div className="h-3.75 bg-sage-200/50 dark:bg-sage-300/40 rounded w-7 mx-auto" />
                       </td>
                     ))}
-                    <td className="p-3 border-l border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
-                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-8 mx-auto" />
+
+                    {/* Sessions Total */}
+                    <td className="sticky right-0 z-20 p-2 border-l border-b border-sage-300 dark:border-sage-400 bg-white dark:bg-sage-100">
+                      <div className="h-4 bg-sage-200 dark:bg-sage-300 rounded-full w-8 mx-auto" />
                     </td>
                   </tr>
                 ))
               ) : (
-                paginatedResidents.map(resident => (
+                paginatedResidents.map((resident, index) => (
                   <MatrixRowItem
                     key={resident.id}
                     resident={resident}
+                    index={index}
                     sortedCats={sortedCats}
                     catModuleMap={catModuleMap}
                     attMap={attMap}
@@ -699,6 +750,40 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
               )}
             </tbody>
           </table>
+
+          {filteredResidents.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="sticky top-9.5 left-0 w-full flex justify-center pointer-events-none"
+              style={{ marginBottom: -220 }}
+            >
+              <div className="flex flex-col items-center justify-center gap-2 pt-16 text-center pointer-events-none">
+                {searchTerm.trim() ? (
+                  <>
+                    <Search className="w-8 h-8 text-sage-300 dark:text-sage-500" />
+                    <p className="text-sm font-semibold text-sage-600 dark:text-sage-400">
+                      No residents match "{searchTerm}"
+                    </p>
+                    <p className="text-xs text-sage-400 dark:text-sage-500">
+                      Try a different name, or clear the search.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-8 h-8 text-sage-300 dark:text-sage-500" />
+                    <p className="text-sm font-semibold text-sage-600 dark:text-sage-400">
+                      No residents yet
+                    </p>
+                    <p className="text-xs text-sage-400 dark:text-sage-500">
+                      Add residents in Config to start tracking attendance.
+                    </p>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
 
         <div className="px-4 py-2.5 border-t border-sage-200 dark:border-sage-300 bg-sage-50/50 dark:bg-sage-100">
@@ -736,8 +821,8 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   >
                     {activeCategory?.name}
                   </span>
-                  <h3 className="font-display font-semibold text-sage-900 dark:text-sage-100 text-base leading-snug">{activeModule.name}</h3>
-                  <p className="text-xs text-sage-500 dark:text-sage-400 mt-0.5 font-medium">Resident: <strong className="text-sage-800 dark:text-sage-200">{activeResident.fullName}</strong></p>
+                  <h3 className="font-display font-semibold text-sage-900 text-base leading-snug">{activeModule.name}</h3>
+                  <p className="text-xs text-sage-500 mt-0.5 font-medium">Resident: <strong className="text-sage-800">{activeResident.fullName}</strong></p>
                 </div>
                 <button
                   onClick={() => setPopoverCell(null)}
@@ -748,11 +833,11 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
               </div>
 
               <div>
-                <span className="text-[11px] font-semibold text-sage-500 dark:text-sage-400 uppercase tracking-wider flex items-center space-x-1 mb-2">
-                  <Calendar className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400" />
+                <span className="text-[11px] font-semibold text-sage-500 uppercase tracking-wider flex items-center space-x-1 mb-2">
+                  <Calendar className="w-3.5 h-3.5 text-brass-600" />
                   <span>Pre-Scheduled Dates ({activeModule.conductedDates?.length || 0}):</span>
                 </span>
-                <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+                <div className="flex flex-wrap gap-1.5 min-h-7">
                   {activeModule.conductedDates && activeModule.conductedDates.length > 0 ? (
                     activeModule.conductedDates.map(cd => {
                       const isAttended = activeDates.includes(cd);
@@ -764,10 +849,10 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                           className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold border flex items-center space-x-1.5 transition-all ${
                             isAttended
                               ? 'bg-rehab-700 dark:bg-rehab-600 text-white border-rehab-800 shadow-sm'
-                              : 'bg-sage-50 dark:bg-sage-200 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-300 hover:border-brass-400'
+                              : 'bg-sage-50 dark:bg-sage-200 text-sage-700 border-sage-200 dark:border-sage-300 hover:border-brass-400'
                           }`}
                         >
-                          {isAttended && <Check className="w-3 h-3 stroke-[3]" />}
+                          {isAttended && <Check className="w-3 h-3 stroke-3" />}
                           <span>{formatToUSDate(cd)}</span>
                         </button>
                       );
@@ -780,20 +865,20 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
 
               {activeDates.length > 0 && (
                 <div className="pt-3 border-t border-sage-200/70 dark:border-sage-300/70">
-                  <span className="text-[11px] font-semibold text-sage-500 dark:text-sage-400 uppercase tracking-wider block mb-1.5">
+                  <span className="text-[11px] font-semibold text-sage-500 uppercase tracking-wider block mb-1.5">
                     Attended Dates ({activeDates.length}):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {activeDates.map((d, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-rehab-100 dark:bg-rehab-100/70 text-rehab-800 dark:text-rehab-300 rounded-lg text-xs font-mono font-semibold border border-rehab-500/25"
+                        className="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-rehab-100 dark:bg-rehab-100/70 text-rehab-800 rounded-lg text-xs font-mono font-semibold border border-rehab-500/25"
                       >
                         <span>{formatToUSDate(d)}</span>
                         <button
                           type="button"
                           onClick={() => toggleAttendance(activeResident.id, activeModule.id, d)}
-                          className="text-rehab-600 dark:text-rehab-400 hover:text-red-500 p-0.5"
+                          className="text-rehab-600 hover:text-red-500 p-0.5"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -804,7 +889,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
               )}
 
               <div className="pt-3 border-t border-sage-200/70 dark:border-sage-300/70">
-                <label className="text-[11px] font-semibold text-sage-500 dark:text-sage-400 uppercase tracking-wider block mb-1.5">
+                <label className="text-[11px] font-semibold text-sage-500 uppercase tracking-wider block mb-1.5">
                   Manual Date Attendance:
                 </label>
                 <div className="flex items-center space-x-2">
@@ -834,8 +919,8 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
               </div>
 
               <div className="pt-3 border-t border-sage-200/70 dark:border-sage-300/70">
-                <label className="text-[11px] font-semibold text-sage-500 dark:text-sage-400 uppercase tracking-wider block mb-1.5 flex items-center space-x-1">
-                  <CalendarPlus className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400" />
+                <label className="text-[11px] font-semibold text-sage-500 uppercase tracking-wider block mb-1.5 items-center space-x-1">
+                  <CalendarPlus className="w-3.5 h-3.5 text-brass-600" />
                   <span>Add Date to Module Schedule:</span>
                 </label>
                 <div className="flex items-center space-x-2">

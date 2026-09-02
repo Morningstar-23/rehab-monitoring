@@ -12,6 +12,7 @@ import { JournalEntryView } from './components/JournalEntryView';
 import { ConfigView } from './components/ConfigView';
 import { exportMatrixToExcel } from './utils/excelExport';
 import { useSessionStore } from './utils/useSessionStore';
+import { NotificationProvider, useToast, useConfirm } from './context/NotificationProvider';
 
 const PAGE_VARIANTS = {
   initial: { opacity: 0, y: 6 },
@@ -24,8 +25,10 @@ const PAGE_TRANSITION: Transition = {
   ease: [0.22, 1, 0.36, 1] as const,
 };
 
-export default function App() {
+function AppContent() {
   const { appActiveTab, configTab, setAppState, setConfigState } = useSessionStore();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const activeTab = appActiveTab;
   const setActiveTab = (tab: 'matrix' | 'batch' | 'journal' | 'config') =>
@@ -42,12 +45,15 @@ export default function App() {
       try {
         const update = await check();
         if (update?.available) {
-          const proceed = confirm(
-            `🚀 New Update Available (v${update.version})!\n\nWould you like to download and install it now?`
-          );
+          const proceed = await confirm({
+            title: 'Update available',
+            message: `Version ${update.version} is ready to install. Would you like to download and install it now?`,
+            confirmLabel: 'Update Now',
+            cancelLabel: 'Later'
+          });
           if (proceed) {
             await update.downloadAndInstall();
-            alert('Update complete! Restarting RehabMonitoring...');
+            toast.success('Restarting RehabMonitoring...', 'Update complete');
             await relaunch();
           }
         }
@@ -155,5 +161,13 @@ export default function App() {
         </AnimatePresence>
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <NotificationProvider>
+      <AppContent />
+    </NotificationProvider>
   );
 }

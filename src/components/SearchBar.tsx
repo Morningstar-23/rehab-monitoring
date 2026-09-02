@@ -41,7 +41,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
       {typeof count === 'number' && typeof total === 'number' && (
         <div className="text-xs text-sage-500 shrink-0 font-medium hidden sm:block">
-          Showing <span className="font-semibold text-rehab-800 dark:text-rehab-600">{count}</span> of {total}
+          Showing <span className="font-semibold text-rehab-800">{count}</span> of {total}
         </div>
       )}
     </div>

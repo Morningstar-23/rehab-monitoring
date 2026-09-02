@@ -7,6 +7,7 @@ import { useSessionStore } from '../../utils/useSessionStore';
 import { db } from '../../db/db';
 import { SearchBar } from '../SearchBar';
 import { DatePicker } from '../DatePicker';
+import { useConfirm } from '../../context/NotificationProvider';
 import {
   Plus,
   Trash2,
@@ -59,6 +60,7 @@ const ModalShell: React.FC<{ onClose: () => void; children: React.ReactNode; max
 );
 
 export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ categories, modules }) => {
+  const confirm = useConfirm();
   const {
     configCatSearch,
     configCatFilter,
@@ -137,7 +139,13 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (confirm('Delete this entire Category and all its modules?')) {
+    const ok = await confirm({
+      title: 'Delete category?',
+      message: 'This removes the entire category and all of its modules, including their attendance logs. This cannot be undone.',
+      variant: 'danger',
+      confirmLabel: 'Delete Category'
+    });
+    if (ok) {
       await db.categories.delete(id);
       const catMods = modules.filter(m => m.categoryId === id);
       for (const m of catMods) {
@@ -171,7 +179,13 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
   };
 
   const handleDeleteModule = async (id: string) => {
-    if (confirm('Delete this module?')) {
+    const ok = await confirm({
+      title: 'Delete module?',
+      message: 'This removes the module and its attendance logs. This cannot be undone.',
+      variant: 'danger',
+      confirmLabel: 'Delete Module'
+    });
+    if (ok) {
       await db.modules.delete(id);
       await db.attendance.where('moduleId').equals(id).delete();
     }
@@ -218,7 +232,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={toggleExpandCollapseAll}
-              className="flex items-center space-x-1.5 px-3 py-2 bg-white dark:bg-sage-100 border border-sage-200 dark:border-sage-300 text-sage-700 dark:text-sage-300 rounded-xl text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
+              className="flex items-center space-x-1.5 px-3 py-2 bg-white dark:bg-sage-100 border border-sage-200 dark:border-sage-300 text-sage-700 rounded-xl text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
             >
               <ChevronsUpDown className="w-3.5 h-3.5" />
               <span>
@@ -246,7 +260,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
           <button
             onClick={() => setSelectedCategoryFilter('ALL')}
             className={`relative px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 ${
-              selectedCategoryFilter === 'ALL' ? 'text-white' : 'bg-white dark:bg-sage-100 text-sage-600 dark:text-sage-300 border border-sage-200 dark:border-sage-300 hover:bg-sage-100 dark:hover:bg-sage-200'
+              selectedCategoryFilter === 'ALL' ? 'text-white' : 'bg-white dark:bg-sage-100 text-sage-600 border border-sage-200 dark:border-sage-300 hover:bg-sage-100 dark:hover:bg-sage-200'
             }`}
           >
             {selectedCategoryFilter === 'ALL' && (
@@ -264,7 +278,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                 key={cat.id}
                 onClick={() => setSelectedCategoryFilter(isSelected ? 'ALL' : cat.id)}
                 className={`relative flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 border ${
-                  isSelected ? 'border-transparent text-white' : 'border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100 text-sage-700 dark:text-sage-300 hover:bg-sage-100 dark:hover:bg-sage-200'
+                  isSelected ? 'border-transparent text-white' : 'border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100 text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-200'
                 }`}
               >
                 {isSelected && (
@@ -275,7 +289,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                   style={{ backgroundColor: cat.colorHex }}
                 />
                 <span className="relative z-10">{cat.name}</span>
-                <span className={`relative z-10 text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-sage-100 dark:bg-sage-200 text-sage-500 dark:text-sage-400'}`}>
+                <span className={`relative z-10 text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-sage-100 dark:bg-sage-200 text-sage-500'}`}>
                   {count}
                 </span>
               </button>
@@ -325,14 +339,14 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                 <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
                   <button
                     onClick={() => setTargetCategoryForNewMod(cat.id)}
-                    className="flex items-center space-x-1 px-3 py-1.5 bg-sage-100 dark:bg-sage-200 hover:bg-sage-200 dark:hover:bg-sage-300 text-sage-700 dark:text-sage-200 text-xs font-semibold rounded-lg transition-colors"
+                    className="flex items-center space-x-1 px-3 py-1.5 bg-sage-100 dark:bg-sage-200 hover:bg-sage-200 dark:hover:bg-sage-300 text-sage-700 text-xs font-semibold rounded-lg transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Module</span>
                   </button>
                   <button
                     onClick={() => setEditingCategory(cat)}
-                    className="p-1.5 text-sage-500 hover:text-rehab-700 dark:hover:text-rehab-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg transition-colors"
+                    className="p-1.5 text-sage-500 hover:text-rehab-700 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg transition-colors"
                     title="Edit Category Title & Color"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
@@ -346,7 +360,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                   </button>
                   <button
                     onClick={() => toggleCategoryCollapse(cat.id)}
-                    className="p-1.5 text-sage-400 hover:text-sage-700 dark:hover:text-sage-200 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg ml-1"
+                    className="p-1.5 text-sage-400 hover:text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg ml-1"
                   >
                     <motion.div animate={{ rotate: isCollapsed ? 0 : 180 }} transition={{ duration: 0.2 }}>
                       <ChevronDown className="w-4 h-4" />
@@ -379,13 +393,13 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                             >
                               <div>
                                 <div className="flex items-start justify-between gap-2 mb-2">
-                                  <span className="font-semibold text-xs text-sage-800 dark:text-sage-200 leading-snug">
+                                  <span className="font-semibold text-xs text-sage-800 leading-snug">
                                     {mod.name}
                                   </span>
                                   <div className="flex items-center space-x-1 shrink-0">
                                     <button
                                       onClick={() => setEditingModule(mod)}
-                                      className="p-1 text-sage-400 hover:text-rehab-700 dark:hover:text-rehab-400 rounded"
+                                      className="p-1 text-sage-400 hover:text-rehab-700 rounded"
                                     >
                                       <Edit2 className="w-3 h-3" />
                                     </button>
@@ -408,7 +422,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                                       mod.conductedDates.map(d => (
                                         <span
                                           key={d}
-                                          className="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-sage-100 dark:bg-sage-200 text-sage-700 dark:text-sage-300 border border-sage-200 dark:border-sage-300 rounded text-[10px] font-mono"
+                                          className="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-sage-100 dark:bg-sage-200 text-sage-700 border border-sage-200 dark:border-sage-300 rounded text-[10px] font-mono"
                                         >
                                           <span>{formatToUSDate(d)}</span>
                                           <button
@@ -482,7 +496,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <div className="pt-2 flex justify-end space-x-2">
               <button
                 onClick={() => setTargetCategoryForNewMod(null)}
-                className="px-4 py-2 text-xs font-medium text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -532,7 +546,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                     onChange={e => setNewCatColor(e.target.value)}
                     className="w-12 h-9 p-0.5 border border-sage-200 dark:border-sage-300 rounded-xl cursor-pointer bg-white dark:bg-sage-100"
                   />
-                  <span className="text-xs font-mono uppercase text-sage-600 dark:text-sage-400">{newCatColor}</span>
+                  <span className="text-xs font-mono uppercase text-sage-600">{newCatColor}</span>
                 </div>
               </div>
             </div>
@@ -540,7 +554,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <div className="pt-2 flex justify-end space-x-2">
               <button
                 onClick={() => setShowAddCatModal(false)}
-                className="px-4 py-2 text-xs font-medium text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -589,7 +603,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                     onChange={e => setEditingCategory({ ...editingCategory, colorHex: e.target.value })}
                     className="w-12 h-9 p-0.5 border border-sage-200 dark:border-sage-300 rounded-xl cursor-pointer bg-white dark:bg-sage-100"
                   />
-                  <span className="text-xs font-mono uppercase text-sage-600 dark:text-sage-400">{editingCategory.colorHex}</span>
+                  <span className="text-xs font-mono uppercase text-sage-600">{editingCategory.colorHex}</span>
                 </div>
               </div>
 
@@ -603,7 +617,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                       headerBgHex: editingCategory.colorHex,
                       headerTextHex: getContrastTextColor(editingCategory.colorHex)
                     })}
-                    className="text-[10px] font-semibold text-brass-700 dark:text-brass-400 hover:underline"
+                    className="text-[10px] font-semibold text-brass-700 hover:underline"
                   >
                     Match accent color
                   </button>
@@ -615,7 +629,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                     onChange={e => setEditingCategory({ ...editingCategory, headerBgHex: e.target.value })}
                     className="w-12 h-9 p-0.5 border border-sage-200 dark:border-sage-300 rounded-xl cursor-pointer bg-white dark:bg-sage-100"
                   />
-                  <span className="text-xs font-mono uppercase text-sage-600 dark:text-sage-400">
+                  <span className="text-xs font-mono uppercase text-sage-600">
                     {editingCategory.headerBgHex || editingCategory.colorHex}
                   </span>
                 </div>
@@ -630,7 +644,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                     onChange={e => setEditingCategory({ ...editingCategory, headerTextHex: e.target.value })}
                     className="w-12 h-9 p-0.5 border border-sage-200 dark:border-sage-300 rounded-xl cursor-pointer bg-white dark:bg-sage-100"
                   />
-                  <span className="text-xs font-mono uppercase text-sage-600 dark:text-sage-400">
+                  <span className="text-xs font-mono uppercase text-sage-600">
                     {editingCategory.headerTextHex || '#171A15'}
                   </span>
                 </div>
@@ -657,7 +671,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <div className="pt-2 flex justify-end space-x-2">
               <button
                 onClick={() => setEditingCategory(null)}
-                className="px-4 py-2 text-xs font-medium text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -713,7 +727,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
             <div className="pt-2 flex justify-end space-x-2">
               <button
                 onClick={() => setEditingModule(null)}
-                className="px-4 py-2 text-xs font-medium text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
               >
                 Cancel
               </button>

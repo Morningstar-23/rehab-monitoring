@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Self-hosted fonts */
 @import "@fontsource/fraunces/400.css";
 @import "@fontsource/fraunces/500.css";

@@ -3,10 +3,13 @@ import React, { useRef } from 'react';
 import { motion } from 'motion/react';
 import { db, resetToCleanTemplate } from '../../db/db';
 import { restoreFullBackup, parseJsonBackup } from '../../utils/backupRestore';
+import { useToast, useConfirm } from '../../context/NotificationProvider';
 import { Download, Upload, AlertTriangle, RotateCcw } from 'lucide-react';
 
 export const BackupTab: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const handleExportBackup = async () => {
     const data = {
@@ -35,22 +38,27 @@ export const BackupTab: React.FC = () => {
 
       const payload = parseJsonBackup(content);
       if (!payload) {
-        alert('Invalid backup file format. Please select an exported RehabMonitoring JSON file.');
+        toast.error('Please select a valid exported RehabMonitoring JSON file.', 'Invalid backup file');
         return;
       }
 
-      const confirmMsg =
-        '⚠️ Restoring this backup will replace current local database records with the backup contents. Proceed?';
-      if (!confirm(confirmMsg)) return;
+      const ok = await confirm({
+        title: 'Restore this backup?',
+        message: 'Restoring will replace current local database records with the backup contents. Proceed?',
+        variant: 'danger',
+        confirmLabel: 'Restore Backup'
+      });
+      if (!ok) return;
 
       try {
         const res = await restoreFullBackup(payload);
-        alert(
-          `✅ Backup successfully restored!\n\n• ${res.categoriesCount} Categories\n• ${res.modulesCount} Modules\n• ${res.residentsCount} Residents\n• ${res.attendanceCount} Attendance Logs`
+        toast.success(
+          `${res.categoriesCount} Categories · ${res.modulesCount} Modules · ${res.residentsCount} Residents · ${res.attendanceCount} Attendance Logs`,
+          'Backup successfully restored'
         );
       } catch (err) {
         console.error(err);
-        alert('Failed to restore backup: ' + (err instanceof Error ? err.message : String(err)));
+        toast.error(err instanceof Error ? err.message : String(err), 'Failed to restore backup');
       }
     };
     reader.readAsText(file);
@@ -58,9 +66,15 @@ export const BackupTab: React.FC = () => {
   };
 
   const handleResetClean = async () => {
-    if (confirm('⚠️ WARNING: This will permanently wipe all test resident names and attendance dates, resetting the app to the clean 4-category, 33-module government template. Continue?')) {
+    const ok = await confirm({
+      title: 'Reset to clean template?',
+      message: 'This will permanently wipe all resident names and attendance dates, resetting the app to the clean 4-category, 33-module government template.',
+      variant: 'danger',
+      confirmLabel: 'Wipe & Reset'
+    });
+    if (ok) {
       await resetToCleanTemplate();
-      alert('Database successfully reset to clean production template!');
+      toast.success('Database reset to the clean production template.');
     }
   };
 
@@ -70,7 +84,7 @@ export const BackupTab: React.FC = () => {
       <div className="bg-sage-50 p-6 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-[0_1px_2px_rgba(11,42,31,0.04),0_12px_28px_-16px_rgba(11,42,31,0.18)] space-y-4 flex flex-col justify-between">
         <div className="space-y-2">
           <h3 className="font-display text-base font-medium text-sage-900 flex items-center space-x-2.5">
-            <Download className="w-4 h-4 text-brass-600 dark:text-brass-400" />
+            <Download className="w-4 h-4 text-brass-600" />
             <span>Export Offline Backup</span>
           </h3>
           <p className="text-xs text-sage-500 leading-relaxed">
@@ -92,7 +106,7 @@ export const BackupTab: React.FC = () => {
       <div className="bg-sage-50 p-6 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-[0_1px_2px_rgba(11,42,31,0.04),0_12px_28px_-16px_rgba(11,42,31,0.18)] space-y-4 flex flex-col justify-between">
         <div className="space-y-2">
           <h3 className="font-display text-base font-medium text-sage-900 flex items-center space-x-2.5">
-            <Upload className="w-4 h-4 text-brass-600 dark:text-brass-400" />
+            <Upload className="w-4 h-4 text-brass-600" />
             <span>Import & Restore Backup</span>
           </h3>
           <p className="text-xs text-sage-500 leading-relaxed">

@@ -1,5 +1,6 @@
 // src/components/BatchLoggingView.tsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Category, Module, Resident, AttendanceRecord } from '../types';
 import { formatToUSDate } from '../utils/dateUtils';
@@ -87,12 +88,12 @@ const ModalShell: React.FC<{
           className={`bg-white dark:bg-sage-100 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-2xl ${maxWidth} w-full p-6 space-y-4 text-left`}
         >
           <div className="flex items-center justify-between pb-3 border-b border-sage-200 dark:border-sage-300">
-            <h3 className="font-display font-semibold text-base text-sage-900 dark:text-sage-100">
+            <h3 className="font-display font-semibold text-base text-sage-900">
               {title}
             </h3>
             <button
               onClick={onClose}
-              className="text-sage-400 hover:text-sage-600 dark:hover:text-sage-200 p-1 rounded-xl hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
+              className="text-sage-400 hover:text-sage-600 p-1 rounded-xl hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -138,15 +139,15 @@ const AnimatedDropdown: React.FC<{
   return (
     <div className="relative space-y-1.5" ref={dropdownRef}>
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-sage-600 dark:text-sage-400 flex items-center space-x-1.5">
-          <Icon className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400" />
+        <label className="text-xs font-semibold text-sage-600 flex items-center space-x-1.5">
+          <Icon className="w-3.5 h-3.5 text-brass-600" />
           <span>{label}</span>
         </label>
         {onAddNew && (
           <button
             type="button"
             onClick={onAddNew}
-            className="text-[11px] font-semibold text-brass-700 dark:text-brass-400 hover:underline flex items-center space-x-0.5"
+            className="text-[11px] font-semibold text-brass-700 hover:underline flex items-center space-x-0.5"
           >
             <Plus className="w-3 h-3" />
             <span>{addNewLabel || 'Add New'}</span>
@@ -157,7 +158,7 @@ const AnimatedDropdown: React.FC<{
       <button
         type="button"
         onClick={() => setIsOpen(prev => !prev)}
-        className="w-full flex items-center justify-between p-2.5 bg-sage-50/70 dark:bg-sage-200/50 border border-sage-200 dark:border-sage-300 rounded-xl text-left text-xs font-medium text-sage-900 dark:text-sage-100 hover:border-brass-500/60 focus:outline-none focus:ring-2 focus:ring-brass-500/40 shadow-2xs transition-all"
+        className="w-full flex items-center justify-between p-2.5 bg-sage-50/70 dark:bg-sage-200/50 border border-sage-200 dark:border-sage-300 rounded-xl text-left text-xs font-medium text-sage-900 hover:border-brass-500/60 focus:outline-none focus:ring-2 focus:ring-brass-500/40 shadow-2xs transition-all"
       >
         <div className="flex items-center space-x-2 truncate pr-2">
           {selectedOption?.colorHex && (
@@ -189,7 +190,7 @@ const AnimatedDropdown: React.FC<{
                   placeholder="Filter options..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full px-2.5 py-1 text-xs bg-white dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-lg text-sage-900 dark:text-sage-100 focus:outline-none focus:ring-1 focus:ring-brass-500"
+                  className="w-full px-2.5 py-1 text-xs bg-white dark:bg-sage-200 border border-sage-200 dark:border-sage-300 rounded-lg text-sage-900 focus:outline-none focus:ring-1 focus:ring-brass-500"
                   autoFocus
                 />
               </div>
@@ -213,7 +214,7 @@ const AnimatedDropdown: React.FC<{
                       className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left transition-colors ${
                         isSelected
                           ? 'bg-rehab-700 dark:bg-rehab-600 text-white font-semibold'
-                          : 'text-sage-800 dark:text-sage-200 hover:bg-sage-100 dark:hover:bg-sage-200/80'
+                          : 'text-sage-800 hover:bg-sage-100 dark:hover:bg-sage-200/80'
                       }`}
                     >
                       <div className="flex items-center space-x-2 truncate">
@@ -229,7 +230,7 @@ const AnimatedDropdown: React.FC<{
                             className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                               isSelected
                                 ? 'bg-white/20 text-white'
-                                : 'bg-sage-200 dark:bg-sage-300 text-sage-600 dark:text-sage-300'
+                                : 'bg-sage-200 dark:bg-sage-300 text-sage-600'
                             }`}
                           >
                             {opt.count}
@@ -250,7 +251,7 @@ const AnimatedDropdown: React.FC<{
                   setIsOpen(false);
                   onAddNew();
                 }}
-                className="w-full flex items-center justify-center space-x-1 p-2 bg-sage-50 dark:bg-sage-200 border-t border-sage-200 dark:border-sage-300 text-brass-700 dark:text-brass-300 hover:bg-sage-100 dark:hover:bg-sage-300 font-semibold transition-colors"
+                className="w-full flex items-center justify-center space-x-1 p-2 bg-sage-50 dark:bg-sage-200 border-t border-sage-200 dark:border-sage-300 text-brass-700 hover:bg-sage-100 dark:hover:bg-sage-300 font-semibold transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>{addNewLabel || 'Quick Add'}</span>
@@ -342,6 +343,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
   const [showResidentModal, setShowResidentModal] = useState(false);
   const [newResidentName, setNewResidentName] = useState('');
   const [newResidentAdmission, setNewResidentAdmission] = useState('');
+  const [newResidentElevation, setNewResidentElevation] = useState('');
   const [newResidentPhase, setNewResidentPhase] = useState<Resident['phaseStatus']>('Junior');
 
   const currentCategory = useMemo(
@@ -477,12 +479,14 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
       id: newId,
       fullName: newResidentName.trim(),
       admissionDate: newResidentAdmission || undefined,
+      elevationDate: newResidentElevation || undefined,
       phaseStatus: newResidentPhase
     });
 
     setSelectedResidents(prev => new Set([...prev, newId]));
     setNewResidentName('');
     setNewResidentAdmission('');
+    setNewResidentElevation('');
     setShowResidentModal(false);
   };
 
@@ -490,6 +494,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       className={`max-w-6xl mx-auto p-4 md:p-6 space-y-6 ${isFooterSticky ? 'pb-28' : 'pb-8'}`}
     >
@@ -505,24 +510,24 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-brass-100/70 dark:bg-brass-500/20 flex items-center justify-center text-brass-700 dark:text-brass-400">
+            <div className="w-8 h-8 rounded-xl bg-brass-100/70 dark:bg-brass-500/20 flex items-center justify-center text-brass-700">
               <Users className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-display text-base md:text-lg font-medium text-sage-900 dark:text-sage-100 leading-tight">
+              <h2 className="font-display text-base md:text-lg font-medium text-sage-900 leading-tight">
                 Batch Session Attendance Logging
               </h2>
               {isHeaderMinimized && currentModule && (
-                <p className="text-xs text-sage-500 dark:text-sage-400 flex items-center space-x-1.5 mt-0.5">
+                <p className="text-xs text-sage-500 flex items-center space-x-1.5 mt-0.5">
                   <span
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: currentCategory?.colorHex || '#2F7A54' }}
                   />
-                  <strong className="text-sage-700 dark:text-sage-300">{currentCategory?.name}</strong>
+                  <strong className="text-sage-700">{currentCategory?.name}</strong>
                   <span>•</span>
-                  <strong className="text-sage-800 dark:text-sage-100">{currentModule.name}</strong>
+                  <strong className="text-sage-800">{currentModule.name}</strong>
                   <span>•</span>
-                  <span className="font-mono text-rehab-700 dark:text-rehab-400 font-semibold">
+                  <span className="font-mono text-rehab-700 font-semibold">
                     {selectedDate ? formatToUSDate(selectedDate) : 'No Date'}
                   </span>
                 </p>
@@ -537,8 +542,8 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
               onClick={() => setIsHeaderSticky(prev => !prev)}
               className={`p-2 rounded-xl text-xs font-semibold flex items-center space-x-1 transition-colors border ${
                 isHeaderSticky
-                  ? 'text-brass-700 dark:text-brass-300 bg-brass-100/70 dark:bg-brass-500/20 border-brass-300/60 dark:border-brass-400/30'
-                  : 'text-sage-400 hover:text-sage-600 dark:hover:text-sage-200 hover:bg-sage-100 dark:hover:bg-sage-200 border-transparent'
+                  ? 'text-brass-700 bg-brass-100/70 dark:bg-brass-500/20 border-brass-300/60 dark:border-brass-400/30'
+                  : 'text-sage-400 hover:text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 border-transparent'
               }`}
               title={isHeaderSticky ? 'Sticky Header: ON (Click to unpin)' : 'Sticky Header: OFF (Click to pin)'}
             >
@@ -549,7 +554,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
             <button
               type="button"
               onClick={() => setIsHeaderMinimized(prev => !prev)}
-              className="p-2 rounded-xl text-sage-500 dark:text-sage-400 hover:text-sage-700 dark:hover:text-sage-200 hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
+              className="p-2 rounded-xl text-sage-500 hover:text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-200 transition-colors"
               title={isHeaderMinimized ? 'Expand settings' : 'Minimize settings'}
             >
               {isHeaderMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
@@ -617,7 +622,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
               {/* Date Selector & Pre-scheduled Chips */}
               <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-sage-200/70 dark:border-sage-300/70">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold text-sage-600 dark:text-sage-400">
+                  <span className="text-xs font-semibold text-sage-600">
                     Session Date:
                   </span>
                   <DatePicker
@@ -642,7 +647,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
                           className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold border transition-all ${
                             isActive
                               ? 'bg-rehab-700 dark:bg-rehab-600 text-white border-rehab-800 dark:border-rehab-500 shadow-2xs'
-                              : 'bg-sage-50 dark:bg-sage-200 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-300 hover:border-brass-400'
+                              : 'bg-sage-50 dark:bg-sage-200 text-sage-700 border-sage-200 dark:border-sage-300 hover:border-brass-400'
                           }`}
                         >
                           {formatToUSDate(d)}
@@ -675,7 +680,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
             <button
               type="button"
               onClick={handleSelectFiltered}
-              className="text-xs font-semibold text-brass-700 dark:text-brass-300 hover:text-brass-800 dark:hover:text-brass-200 px-3 py-1.5 rounded-xl bg-brass-100/70 dark:bg-brass-500/20 border border-brass-300/60 dark:border-brass-400/30 transition-colors"
+              className="text-xs font-semibold text-brass-700 hover:text-brass-800 px-3 py-1.5 rounded-xl bg-brass-100/70 dark:bg-brass-500/20 border border-brass-300/60 dark:border-brass-400/30 transition-colors"
             >
               {filteredResidents.every(r => selectedResidents.has(r.id)) && filteredResidents.length > 0
                 ? 'Deselect Filtered'
@@ -685,16 +690,16 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
             <button
               type="button"
               onClick={() => setShowResidentModal(true)}
-              className="flex items-center space-x-1 text-xs font-semibold text-sage-700 dark:text-sage-300 hover:text-sage-900 dark:hover:text-sage-100 px-3 py-1.5 rounded-xl bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 transition-colors"
+              className="flex items-center space-x-1 text-xs font-semibold text-sage-700 hover:text-sage-900 px-3 py-1.5 rounded-xl bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 transition-colors"
             >
-              <UserPlus className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400" />
+              <UserPlus className="w-3.5 h-3.5 text-brass-600" />
               <span>+ Add Resident</span>
             </button>
           </div>
         </div>
 
         {/* Residents Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 min-h-[220px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 min-h-55">
           {paginatedResidents.length === 0 ? (
             <div className="col-span-full p-12 text-center text-sage-400 italic">
               {residents.length === 0
@@ -712,8 +717,8 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
                   whileTap={{ scale: 0.98 }}
                   className={`p-3 rounded-2xl border cursor-pointer select-none flex items-center justify-between transition-colors duration-150 ${
                     isSelected
-                      ? 'bg-rehab-100/80 dark:bg-rehab-500/20 border-rehab-500/60 dark:border-rehab-400/50 text-sage-900 dark:text-sage-100 shadow-xs'
-                      : 'bg-sage-50/60 dark:bg-sage-200/40 border-sage-200 dark:border-sage-300 hover:border-brass-400/60 text-sage-700 dark:text-sage-300'
+                      ? 'bg-rehab-100/80 dark:bg-rehab-500/20 border-rehab-500/60 dark:border-rehab-400/50 text-sage-900 shadow-xs'
+                      : 'bg-sage-50/60 dark:bg-sage-200/40 border-sage-200 dark:border-sage-300 hover:border-brass-400/60 text-sage-700'
                   }`}
                 >
                   <div className="flex items-center space-x-2.5 truncate">
@@ -721,13 +726,13 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
                       className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-semibold font-display shrink-0 transition-colors ${
                         isSelected
                           ? 'bg-rehab-700 dark:bg-rehab-600 text-white shadow-2xs'
-                          : 'bg-sage-200 dark:bg-sage-300 text-sage-600 dark:text-sage-300'
+                          : 'bg-sage-200 dark:bg-sage-300 text-sage-600'
                       }`}
                     >
                       {resident.fullName.charAt(0)}
                     </div>
                     <div className="truncate">
-                      <div className="text-xs font-semibold truncate leading-tight text-sage-900 dark:text-sage-100">
+                      <div className="text-xs font-semibold truncate leading-tight text-sage-900">
                         {resident.fullName}
                       </div>
                       <div className="text-[10px] text-sage-400 dark:text-sage-400 font-medium">
@@ -736,7 +741,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
                     </div>
                   </div>
                   {isSelected ? (
-                    <CheckSquare className="w-4 h-4 text-rehab-700 dark:text-rehab-400 shrink-0 ml-1" />
+                    <CheckSquare className="w-4 h-4 text-rehab-700 shrink-0 ml-1" />
                   ) : (
                     <Square className="w-4 h-4 text-sage-300 dark:text-sage-500 shrink-0 ml-1" />
                   )}
@@ -762,71 +767,109 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
       {/* ------------------------------------------------------------- */}
       {/* Animated Save Action Bar with Smooth Entrance & Pin Control   */}
       {/* ------------------------------------------------------------- */}
-      <motion.div
-        initial={{ opacity: 0, y: 36, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{
-          duration: 0.45,
-          ease: [0.16, 1, 0.3, 1],
-          delay: 0.15
-        }}
-        className={
-          isFooterSticky
-            ? 'fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-40'
-            : 'w-full max-w-4xl mx-auto mt-6 px-4 relative z-10'
-        }
-      >
-        <div className="bg-white dark:bg-sage-100 rounded-2xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-2xl p-3 sm:px-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center space-x-3 text-xs">
-            <div className="px-3 py-1.5 rounded-xl bg-rehab-100/80 dark:bg-rehab-500/20 text-rehab-900 dark:text-rehab-300 font-semibold border border-rehab-400/40 dark:border-rehab-500/30">
-              <span className="font-bold">{selectedResidents.size}</span> of {residents.length} marked present
-            </div>
-            {selectedDate && (
-              <span className="hidden sm:inline-block font-mono text-sage-500 dark:text-sage-400 text-[11px]">
-                Date: <strong className="text-sage-700 dark:text-sage-200">{formatToUSDate(selectedDate)}</strong>
-              </span>
-            )}
-          </div>
+      {(() => {
+        // NOTE: App.tsx's page-transition wrapper animates `y` (a transform),
+        // and CSS makes any transformed ancestor the containing block for
+        // `position: fixed` descendants. That silently hijacks this footer's
+        // fixed positioning away from the viewport during every tab switch.
+        // Portaling straight to document.body sidesteps that ancestor chain
+        // entirely when the footer is actually in fixed/sticky mode.
+        const footerVariants = {
+          hidden: { opacity: 0, y: 36, scale: 0.96 },
+          visible: {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] as const, delay: 0.15 }
+          },
+          exit: {
+            opacity: 0,
+            y: 12,
+            scale: 0.98,
+            transition: { duration: 0.15, ease: 'easeIn' as const }
+          }
+        };
 
-          <div className="flex items-center space-x-2.5">
-            {/* Sticky Footer Pin Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsFooterSticky(prev => !prev)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors border ${
-                isFooterSticky
-                  ? 'bg-brass-100/70 dark:bg-brass-500/20 border-brass-300/60 dark:border-brass-400/30 text-brass-800 dark:text-brass-300'
-                  : 'bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-300'
-              }`}
-              title={isFooterSticky ? 'Sticky Footer: ON (Click to unpin)' : 'Sticky Footer: OFF (Click to pin)'}
-            >
-              {isFooterSticky ? (
-                <Pin className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400" />
-              ) : (
-                <PinOff className="w-3.5 h-3.5 text-sage-400" />
+        const footerContent = (
+          <div className="bg-white dark:bg-sage-100 rounded-2xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-2xl p-3 sm:px-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center space-x-3 text-xs">
+              <div className="px-3 py-1.5 rounded-xl bg-rehab-100/80 dark:bg-rehab-500/20 text-rehab-900 font-semibold border border-rehab-400/40 dark:border-rehab-500/30">
+                <span className="font-bold">{selectedResidents.size}</span> of {residents.length} marked present
+              </div>
+              {selectedDate && (
+                <span className="hidden sm:inline-block font-mono text-sage-500 text-[11px]">
+                  Date: <strong className="text-sage-700">{formatToUSDate(selectedDate)}</strong>
+                </span>
               )}
-              <span className="hidden sm:inline">
-                {isFooterSticky ? 'Sticky Bar: ON' : 'Sticky Bar: OFF'}
-              </span>
-            </button>
+            </div>
 
-            {/* Save Attendance Button */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={handleSave}
-              className={`flex items-center space-x-2 px-6 py-2 rounded-xl text-xs font-semibold shadow-md transition-all ${
-                isSavedRecently
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white'
-              }`}
-            >
-              {isSavedRecently ? <Check className="w-4 h-4 stroke-[3]" /> : <Save className="w-4 h-4" />}
-              <span>{isSavedRecently ? 'Attendance Saved!' : 'Save Attendance'}</span>
-            </motion.button>
+            <div className="flex items-center space-x-2.5">
+              {/* Sticky Footer Pin Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsFooterSticky(prev => !prev)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors border ${
+                  isFooterSticky
+                    ? 'bg-brass-100/70 dark:bg-brass-500/20 border-brass-300/60 dark:border-brass-400/30 text-brass-800'
+                    : 'bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-300'
+                }`}
+                title={isFooterSticky ? 'Sticky Footer: ON (Click to unpin)' : 'Sticky Footer: OFF (Click to pin)'}
+              >
+                {isFooterSticky ? (
+                  <Pin className="w-3.5 h-3.5 text-brass-600" />
+                ) : (
+                  <PinOff className="w-3.5 h-3.5 text-sage-400" />
+                )}
+                <span className="hidden sm:inline">
+                  {isFooterSticky ? 'Sticky Bar: ON' : 'Sticky Bar: OFF'}
+                </span>
+              </button>
+
+              {/* Save Attendance Button */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={handleSave}
+                className={`flex items-center space-x-2 px-6 py-2 rounded-xl text-xs font-semibold shadow-md transition-all ${
+                  isSavedRecently
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-rehab-700 dark:bg-rehab-600 hover:bg-rehab-800 text-white'
+                }`}
+              >
+                {isSavedRecently ? <Check className="w-4 h-4 stroke-3" /> : <Save className="w-4 h-4" />}
+                <span>{isSavedRecently ? 'Attendance Saved!' : 'Save Attendance'}</span>
+              </motion.button>
+            </div>
           </div>
-        </div>
-      </motion.div>
+        );
+
+        if (isFooterSticky) {
+          return createPortal(
+            <motion.div
+              variants={footerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="fixed bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-40"
+            >
+              {footerContent}
+            </motion.div>,
+            document.body
+          );
+        }
+
+        return (
+          <motion.div
+            variants={footerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="w-full max-w-4xl mx-auto mt-6 px-4 relative z-10"
+          >
+            {footerContent}
+          </motion.div>
+        );
+      })()}
 
       {/* ------------------------------------------------------------- */}
       {/* IN-PLACE MODAL: Add Category                                  */}
@@ -838,7 +881,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-sage-600 dark:text-sage-400 mb-1">
+            <label className="block text-xs font-semibold text-sage-600 mb-1">
               Category Name *
             </label>
             <input
@@ -846,13 +889,13 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
               placeholder="e.g. Cognitive Behavioral Therapy"
               value={newCategoryName}
               onChange={e => setNewCategoryName(e.target.value)}
-              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 dark:text-sage-100 font-medium focus:ring-2 focus:ring-brass-500/40"
+              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 font-medium focus:ring-2 focus:ring-brass-500/40"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-sage-600 dark:text-sage-400 mb-1.5">
+            <label className="block text-xs font-semibold text-sage-600 mb-1.5">
               Theme Color
             </label>
             <div className="flex items-center gap-2 mb-2">
@@ -875,7 +918,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
                 onChange={e => setNewCategoryColor(e.target.value)}
                 className="w-10 h-8 p-0.5 border border-sage-200 dark:border-sage-300 rounded-lg cursor-pointer bg-white dark:bg-sage-200"
               />
-              <span className="text-xs font-mono uppercase text-sage-600 dark:text-sage-400 font-medium">
+              <span className="text-xs font-mono uppercase text-sage-600 font-medium">
                 {newCategoryColor}
               </span>
             </div>
@@ -885,7 +928,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
             <button
               type="button"
               onClick={() => setShowCategoryModal(false)}
-              className="px-4 py-2 text-xs font-semibold text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
             >
               Cancel
             </button>
@@ -913,13 +956,13 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-sage-600 dark:text-sage-400 mb-1">
+            <label className="block text-xs font-semibold text-sage-600 mb-1">
               Parent Category *
             </label>
             <select
               value={targetCatForNewModule}
               onChange={e => setTargetCatForNewModule(e.target.value)}
-              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 dark:text-sage-100 font-medium focus:ring-2 focus:ring-brass-500/40"
+              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 font-medium focus:ring-2 focus:ring-brass-500/40"
             >
               {categories.map(c => (
                 <option key={c.id} value={c.id}>
@@ -930,7 +973,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-sage-600 dark:text-sage-400 mb-1">
+            <label className="block text-xs font-semibold text-sage-600 mb-1">
               Module Name *
             </label>
             <input
@@ -938,7 +981,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
               placeholder="e.g. Relapse Prevention Strategies"
               value={newModuleName}
               onChange={e => setNewModuleName(e.target.value)}
-              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 dark:text-sage-100 font-medium focus:ring-2 focus:ring-brass-500/40"
+              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 font-medium focus:ring-2 focus:ring-brass-500/40"
               autoFocus
             />
           </div>
@@ -947,7 +990,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
             <button
               type="button"
               onClick={() => setShowModuleModal(false)}
-              className="px-4 py-2 text-xs font-semibold text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
             >
               Cancel
             </button>
@@ -975,7 +1018,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-sage-600 dark:text-sage-400 mb-1">
+            <label className="block text-xs font-semibold text-sage-600 mb-1">
               Full Name *
             </label>
             <input
@@ -983,13 +1026,13 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
               placeholder="e.g. Juan Dela Cruz"
               value={newResidentName}
               onChange={e => setNewResidentName(e.target.value)}
-              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 dark:text-sage-100 font-medium focus:ring-2 focus:ring-brass-500/40"
+              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 font-medium focus:ring-2 focus:ring-brass-500/40"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-sage-600 dark:text-sage-400 mb-1">
+            <label className="block text-xs font-semibold text-sage-600 mb-1">
               Admission Date
             </label>
             <DatePicker
@@ -1000,13 +1043,24 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-sage-600 dark:text-sage-400 mb-1">
+            <label className="block text-xs font-semibold text-sage-600 mb-1">
+              Elevation Date
+            </label>
+            <DatePicker
+              value={newResidentElevation}
+              onChange={setNewResidentElevation}
+              size="md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-sage-600 mb-1">
               Phase Status
             </label>
             <select
               value={newResidentPhase}
               onChange={e => setNewResidentPhase(e.target.value as any)}
-              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 dark:text-sage-100 font-medium focus:ring-2 focus:ring-brass-500/40"
+              className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-sage-50 dark:bg-sage-200 text-sage-900 font-medium focus:ring-2 focus:ring-brass-500/40"
             >
               <option value="Junior">Junior Phase</option>
               <option value="Senior">Senior Phase</option>
@@ -1019,7 +1073,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
             <button
               type="button"
               onClick={() => setShowResidentModal(false)}
-              className="px-4 py-2 text-xs font-semibold text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+              className="px-4 py-2 text-xs font-semibold text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
             >
               Cancel
             </button>

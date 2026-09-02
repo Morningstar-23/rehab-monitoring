@@ -8,6 +8,7 @@ import { db } from '../../db/db';
 import { SearchBar } from '../SearchBar';
 import { Pagination } from '../Pagination';
 import { DatePicker } from '../DatePicker';
+import { useConfirm } from '../../context/NotificationProvider';
 import { Users, Plus, Trash2, Edit2, Check, X, Filter } from 'lucide-react';
 
 interface ResidentsTabProps {
@@ -17,6 +18,7 @@ interface ResidentsTabProps {
 const PHASES = ['ALL', 'Junior', 'Senior', 'Re Entry'];
 
 export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
+  const confirm = useConfirm();
   const {
     configResidentSearch,
     configResidentPhaseFilter,
@@ -81,7 +83,13 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
   };
 
   const handleDeleteResident = async (id: string) => {
-    if (confirm('Delete this resident record and all their attendance logs?')) {
+    const ok = await confirm({
+      title: 'Delete resident?',
+      message: 'This removes the resident record and all their attendance logs. This cannot be undone.',
+      variant: 'danger',
+      confirmLabel: 'Delete Resident'
+    });
+    if (ok) {
       await db.residents.delete(id);
       await db.attendance.where('residentId').equals(id).delete();
     }
@@ -89,17 +97,17 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
 
   const phaseBadgeClass = (phase: Resident['phaseStatus']) =>
     phase === 'Junior'
-      ? 'bg-brass-100/70 dark:bg-brass-200/30 text-brass-800 dark:text-brass-300 border-brass-300/70 dark:border-brass-400/40'
+      ? 'bg-brass-100/70 dark:bg-brass-200/30 text-brass-800 border-brass-300/70 dark:border-brass-400/40'
       : phase === 'Senior'
-      ? 'bg-rehab-100/80 dark:bg-rehab-100/50 text-rehab-800 dark:text-rehab-600 border-rehab-500/25'
-      : 'bg-sage-100 dark:bg-sage-200 text-sage-600 dark:text-sage-400 border-sage-200 dark:border-sage-300';
+      ? 'bg-rehab-100/80 dark:bg-rehab-100/50 text-rehab-800 border-rehab-500/25'
+      : 'bg-sage-100 dark:bg-sage-200 text-sage-600 border-sage-200 dark:border-sage-300';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Left Form: Add Resident */}
       <div className="bg-sage-50 p-6 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-[0_1px_2px_rgba(11,42,31,0.04),0_12px_28px_-16px_rgba(11,42,31,0.18)] space-y-4 lg:col-span-1 h-fit">
         <h3 className="font-display text-base font-medium text-sage-900 flex items-center space-x-2.5">
-          <Users className="w-4 h-4 text-brass-600 dark:text-brass-400" />
+          <Users className="w-4 h-4 text-brass-600" />
           <span>Add New Resident</span>
         </h3>
 
@@ -185,7 +193,7 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
                     key={phase}
                     onClick={() => setSelectedPhaseFilter(phase)}
                     className={`relative px-2.5 py-1 rounded-lg text-xs font-medium transition-colors duration-200 ${
-                      isActive ? 'text-sage-900 font-semibold' : 'text-sage-500 dark:text-sage-400 hover:text-sage-800 dark:hover:text-sage-200'
+                      isActive ? 'text-sage-900 font-semibold' : 'text-sage-500 hover:text-sage-800'
                     }`}
                   >
                     {isActive && (
@@ -205,7 +213,7 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
           {/* Table */}
           <div className="border border-sage-200 dark:border-sage-300 rounded-xl overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-sage-100 dark:bg-sage-200 border-b border-sage-200 dark:border-sage-300 text-sage-600 dark:text-sage-300">
+              <thead className="bg-sage-100 dark:bg-sage-200 border-b border-sage-200 dark:border-sage-300 text-sage-600">
                 <tr>
                   <th className="p-3 font-semibold">Full Name</th>
                   <th className="p-3 font-semibold">Admission</th>
@@ -237,7 +245,7 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
                       <td className="p-3 text-right space-x-2">
                         <button
                           onClick={() => setEditingResident(r)}
-                          className="p-1.5 text-sage-500 hover:text-rehab-700 dark:hover:text-rehab-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg transition-colors"
+                          className="p-1.5 text-sage-500 hover:text-rehab-700 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-lg transition-colors"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -341,7 +349,7 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
               <div className="pt-2 flex justify-end space-x-2">
                 <button
                   onClick={() => setEditingResident(null)}
-                  className="px-4 py-2 text-xs font-medium text-sage-600 dark:text-sage-400 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-medium text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
