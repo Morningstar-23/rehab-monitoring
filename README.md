@@ -87,15 +87,16 @@ hero.png │ │ ├─ react.svg │ │ └─ vite.svg │ ├─ components 
 BatchLoggingView.tsx │ │ ├─ config │ │ │ ├─ BackupTab.tsx │ │ │ ├─
 CategoriesModulesTab.tsx │ │ │ └─ ResidentsTab.tsx │ │ ├─ ConfigView.tsx │ │ ├─
 DatePicker.tsx │ │ ├─ JournalEntryView.tsx │ │ ├─ MatrixView.tsx │ │ ├─
-Navbar.tsx │ │ ├─ Pagination.tsx │ │ ├─ SearchBar.tsx │ │ └─
-SmartImportModal.tsx │ ├─ db │ │ ├─ db.ts │ │ └─ seedData.ts │ ├─ hooks │ │ └─
-useTheme.ts │ ├─ index.css │ ├─ main.tsx │ ├─ types │ │ └─ index.ts │ └─ utils │
-├─ backupRestore.ts │ ├─ clipboardParser.ts │ ├─ dateUtils.ts │ ├─
-excelExport.ts │ └─ useSessionStore.ts ├─ src-tauri │ ├─ 2 │ ├─ build.rs │ ├─
-capabilities │ │ ├─ default.json │ │ └─ desktop.json │ ├─ Cargo.lock │ ├─
-Cargo.toml │ ├─ icons │ │ ├─ 128x128.png │ │ ├─ 128x128@2x.png │ │ ├─ 32x32.png
-│ │ ├─ 64x64.png │ │ ├─ android │ │ │ ├─ mipmap-anydpi-v26 │ │ │ │ └─
-ic_launcher.xml │ │ │ ├─ mipmap-hdpi │ │ │ │ ├─ ic_launcher.png │ │ │ │ ├─
+Navbar.tsx │ │ ├─ Pagination.tsx │ │ ├─ SearchBar.tsx │ │ ├─
+SmartImportModal.tsx │ │ └─ ui │ │ ├─ ConfirmDialog.tsx │ │ └─ Toast.tsx │ ├─
+context │ │ └─ NotificationProvider.tsx │ ├─ db │ │ ├─ db.ts │ │ └─ seedData.ts
+│ ├─ hooks │ │ └─ useTheme.ts │ ├─ index.css │ ├─ main.tsx │ ├─ types │ │ └─
+index.ts │ └─ utils │ ├─ backupRestore.ts │ ├─ clipboardParser.ts │ ├─
+dateUtils.ts │ ├─ excelExport.ts │ └─ useSessionStore.ts ├─ src-tauri │ ├─ 2 │
+├─ build.rs │ ├─ capabilities │ │ ├─ default.json │ │ └─ desktop.json │ ├─
+Cargo.lock │ ├─ Cargo.toml │ ├─ icons │ │ ├─ 128x128.png │ │ ├─ 128x128@2x.png │
+│ ├─ 32x32.png │ │ ├─ 64x64.png │ │ ├─ android │ │ │ ├─ mipmap-anydpi-v26 │ │ │
+│ └─ ic_launcher.xml │ │ │ ├─ mipmap-hdpi │ │ │ │ ├─ ic_launcher.png │ │ │ │ ├─
 ic_launcher_foreground.png │ │ │ │ └─ ic_launcher_round.png │ │ │ ├─ mipmap-mdpi
 │ │ │ │ ├─ ic_launcher.png │ │ │ │ ├─ ic_launcher_foreground.png │ │ │ │ └─
 ic_launcher_round.png │ │ │ ├─ mipmap-xhdpi │ │ │ │ ├─ ic_launcher.png │ │ │ │
@@ -121,138 +122,4 @@ main.rs │ └─ tauri.conf.json ├─ tsconfig.app.json ├─ tsconfig.json
 tsconfig.node.json └─ vite.config.ts
 
 ```
-```
-
-```
-rehab-monitoring
-├─ app-icon.png
-├─ eslint.config.js
-├─ index.html
-├─ package-lock.json
-├─ package.json
-├─ public
-│  ├─ app-icon.png
-│  ├─ favicon.svg
-│  └─ icons.svg
-├─ README.md
-├─ src
-│  ├─ App.css
-│  ├─ App.tsx
-│  ├─ assets
-│  │  ├─ hero.png
-│  │  ├─ react.svg
-│  │  └─ vite.svg
-│  ├─ components
-│  │  ├─ BatchLoggingView.tsx
-│  │  ├─ config
-│  │  │  ├─ BackupTab.tsx
-│  │  │  ├─ CategoriesModulesTab.tsx
-│  │  │  └─ ResidentsTab.tsx
-│  │  ├─ ConfigView.tsx
-│  │  ├─ DatePicker.tsx
-│  │  ├─ JournalEntryView.tsx
-│  │  ├─ MatrixView.tsx
-│  │  ├─ Navbar.tsx
-│  │  ├─ Pagination.tsx
-│  │  ├─ SearchBar.tsx
-│  │  ├─ SmartImportModal.tsx
-│  │  └─ ui
-│  │     ├─ ConfirmDialog.tsx
-│  │     └─ Toast.tsx
-│  ├─ context
-│  │  └─ NotificationProvider.tsx
-│  ├─ db
-│  │  ├─ db.ts
-│  │  └─ seedData.ts
-│  ├─ hooks
-│  │  └─ useTheme.ts
-│  ├─ index.css
-│  ├─ main.tsx
-│  ├─ types
-│  │  └─ index.ts
-│  └─ utils
-│     ├─ backupRestore.ts
-│     ├─ clipboardParser.ts
-│     ├─ dateUtils.ts
-│     ├─ excelExport.ts
-│     └─ useSessionStore.ts
-├─ src-tauri
-│  ├─ 2
-│  ├─ build.rs
-│  ├─ capabilities
-│  │  ├─ default.json
-│  │  └─ desktop.json
-│  ├─ Cargo.lock
-│  ├─ Cargo.toml
-│  ├─ icons
-│  │  ├─ 128x128.png
-│  │  ├─ 128x128@2x.png
-│  │  ├─ 32x32.png
-│  │  ├─ 64x64.png
-│  │  ├─ android
-│  │  │  ├─ mipmap-anydpi-v26
-│  │  │  │  └─ ic_launcher.xml
-│  │  │  ├─ mipmap-hdpi
-│  │  │  │  ├─ ic_launcher.png
-│  │  │  │  ├─ ic_launcher_foreground.png
-│  │  │  │  └─ ic_launcher_round.png
-│  │  │  ├─ mipmap-mdpi
-│  │  │  │  ├─ ic_launcher.png
-│  │  │  │  ├─ ic_launcher_foreground.png
-│  │  │  │  └─ ic_launcher_round.png
-│  │  │  ├─ mipmap-xhdpi
-│  │  │  │  ├─ ic_launcher.png
-│  │  │  │  ├─ ic_launcher_foreground.png
-│  │  │  │  └─ ic_launcher_round.png
-│  │  │  ├─ mipmap-xxhdpi
-│  │  │  │  ├─ ic_launcher.png
-│  │  │  │  ├─ ic_launcher_foreground.png
-│  │  │  │  └─ ic_launcher_round.png
-│  │  │  ├─ mipmap-xxxhdpi
-│  │  │  │  ├─ ic_launcher.png
-│  │  │  │  ├─ ic_launcher_foreground.png
-│  │  │  │  └─ ic_launcher_round.png
-│  │  │  └─ values
-│  │  │     └─ ic_launcher_background.xml
-│  │  ├─ icon.icns
-│  │  ├─ icon.ico
-│  │  ├─ icon.png
-│  │  ├─ ios
-│  │  │  ├─ AppIcon-20x20@1x.png
-│  │  │  ├─ AppIcon-20x20@2x-1.png
-│  │  │  ├─ AppIcon-20x20@2x.png
-│  │  │  ├─ AppIcon-20x20@3x.png
-│  │  │  ├─ AppIcon-29x29@1x.png
-│  │  │  ├─ AppIcon-29x29@2x-1.png
-│  │  │  ├─ AppIcon-29x29@2x.png
-│  │  │  ├─ AppIcon-29x29@3x.png
-│  │  │  ├─ AppIcon-40x40@1x.png
-│  │  │  ├─ AppIcon-40x40@2x-1.png
-│  │  │  ├─ AppIcon-40x40@2x.png
-│  │  │  ├─ AppIcon-40x40@3x.png
-│  │  │  ├─ AppIcon-512@2x.png
-│  │  │  ├─ AppIcon-60x60@2x.png
-│  │  │  ├─ AppIcon-60x60@3x.png
-│  │  │  ├─ AppIcon-76x76@1x.png
-│  │  │  ├─ AppIcon-76x76@2x.png
-│  │  │  └─ AppIcon-83.5x83.5@2x.png
-│  │  ├─ Square107x107Logo.png
-│  │  ├─ Square142x142Logo.png
-│  │  ├─ Square150x150Logo.png
-│  │  ├─ Square284x284Logo.png
-│  │  ├─ Square30x30Logo.png
-│  │  ├─ Square310x310Logo.png
-│  │  ├─ Square44x44Logo.png
-│  │  ├─ Square71x71Logo.png
-│  │  ├─ Square89x89Logo.png
-│  │  └─ StoreLogo.png
-│  ├─ src
-│  │  ├─ lib.rs
-│  │  └─ main.rs
-│  └─ tauri.conf.json
-├─ tsconfig.app.json
-├─ tsconfig.json
-├─ tsconfig.node.json
-└─ vite.config.ts
-
 ```

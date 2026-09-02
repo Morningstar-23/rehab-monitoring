@@ -474,7 +474,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                                             className="p-2.5 bg-white dark:bg-sage-200/80 rounded-xl border border-sage-200 dark:border-sage-300 space-y-1.5 shadow-2xs"
                                           >
                                             <div className="flex items-center justify-between gap-2">
-                                              <span className="font-mono text-xs font-semibold text-sage-800 dark:text-sage-200">
+                                              <span className="font-mono text-xs font-semibold text-sage-800">
                                                 {formatToUSDate(d)}
                                               </span>
 
@@ -493,7 +493,7 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
                                                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer ${
                                                     hasNote
                                                       ? 'bg-brass-100 dark:bg-brass-500/25 text-brass-800 dark:text-brass-300 border border-brass-300/70 hover:bg-brass-200'
-                                                      : 'bg-sage-100 dark:bg-sage-300/60 text-sage-600 dark:text-sage-300 hover:bg-sage-200 border border-sage-200 dark:border-sage-400/40'
+                                                      : 'bg-sage-100 dark:bg-sage-300/60 text-sage-600 hover:bg-sage-200 border border-sage-200 dark:border-sage-400/40'
                                                   }`}
                                                   title="Edit or view note for this session date"
                                                 >

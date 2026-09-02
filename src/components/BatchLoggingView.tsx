@@ -1022,7 +1022,7 @@ export const BatchLoggingView: React.FC<BatchLoggingProps> = ({
                   type="button"
                   onClick={() => setResidentFilterMode(tab.id as any)}
                   className={`relative px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-150 select-none cursor-pointer flex items-center space-x-1.5 shrink-0 ${
-                    isActive ? 'text-white' : 'text-sage-600 hover:text-sage-900 dark:text-sage-300 dark:hover:text-sage-100'
+                    isActive ? 'text-white' : 'text-sage-600 hover:text-sage-900 dark:text-sage-400 dark:hover:text-sage-900'
                   }`}
                 >
                   {isActive && (

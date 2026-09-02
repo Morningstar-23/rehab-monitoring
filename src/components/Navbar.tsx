@@ -15,6 +15,7 @@ import {
 import { useTheme } from '../hooks/useTheme';
 import { useToast } from '../context/NotificationProvider';
 import type { ExportResult } from '../utils/excelExport';
+import packageJson from '../../package.json';
 
 interface NavbarProps {
   activeTab: 'matrix' | 'batch' | 'journal' | 'config';
@@ -75,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
     <header className="glass-dark sticky top-0 z-50 text-white transition-colors duration-200 w-full">
       <div className="w-full px-4 sm:px-6 lg:px-6 h-17 flex items-center justify-between">
 
-        {/* Brand */}
+        {/* Brand & Version Badge */}
         <div className="flex items-center space-x-3">
           <motion.div
             whileHover={{ rotate: -4, scale: 1.05 }}
@@ -93,8 +94,17 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
             />
           </motion.div>
           <div>
-            <h1 className="font-display text-lg tracking-wide leading-tight text-white font-medium">RehabMonitoring</h1>
-            <p className="text-[11px] text-brass-300/90 tracking-wide font-medium">Rehabilitation Activity &amp; Progress Tracker</p>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-lg tracking-wide leading-tight text-white font-medium">
+                RehabMonitoring
+              </h1>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/10 text-brass-300 border border-brass-500/20 select-none">
+                v{packageJson.version}
+              </span>
+            </div>
+            <p className="text-[11px] text-brass-300/90 tracking-wide font-medium">
+              Rehabilitation Activity &amp; Progress Tracker
+            </p>
           </div>
         </div>
 

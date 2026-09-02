@@ -34,18 +34,20 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
+  // Only synchronize if initialTab differs from current configTab to avoid re-rendering during mount
   useEffect(() => {
-    if (initialTab) {
+    if (initialTab && initialTab !== configTab) {
       setConfigTab(initialTab);
     }
-  }, [initialTab]);
+  }, [initialTab, configTab]);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-7xl mx-auto p-4 md:p-6 space-y-5 h-[calc(100vh-84px)] overflow-y-auto scrollbar-gutter-stable"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="max-w-7xl mx-auto p-4 md:p-6 space-y-5 h-[calc(100vh-84px)] overflow-y-auto scrollbar-gutter-stable pb-12"
     >
       {/* Top Navigation Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-sage-100 p-3 rounded-2xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-xs gap-3 shrink-0">
@@ -66,7 +68,7 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
                 className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
                   isActive
                     ? 'text-white'
-                    : 'text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 dark:text-sage-300'
+                    : 'text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 dark:text-sage-400 dark:hover:text-sage-800'
                 }`}
               >
                 {isActive && (
@@ -105,13 +107,13 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
       </div>
 
       {/* Render Active Sub-Tab with Animated Transitions */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={configTab}
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
           className="pb-6"
         >
           {configTab === 'modules' && (

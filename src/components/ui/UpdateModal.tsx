@@ -3,12 +3,11 @@ import React, { useEffect, useState, useTransition } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { Sparkles, Download, RotateCw, X, ArrowUpCircle } from 'lucide-react';
+import { Sparkles, Download, RotateCw, X, ArrowUpCircle, AlertCircle } from 'lucide-react';
 
 interface UpdateModalProps {
-  /** Optional custom trigger if checking manually */
   manualCheckTrigger?: boolean;
-  onCheckComplete?: () => void;
+  onCheckComplete?: (status: 'updated' | 'no-update' | 'error', version?: string) => void;
 }
 
 export const UpdateModal: React.FC<UpdateModalProps> = ({
@@ -17,38 +16,40 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 }) => {
   const [updateInfo, setUpdateInfo] = useState<Update | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'downloading' | 'installing' | 'restarting' | 'error'>('idle');
   const [progress, setProgress] = useState(0);
   const [downloadedBytes, setDownloadedBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  // Run automated check on app launch
   useEffect(() => {
     checkForUpdate(false);
   }, []);
 
-  // Run manual check if requested
   useEffect(() => {
     if (manualCheckTrigger) {
       checkForUpdate(true);
     }
   }, [manualCheckTrigger]);
 
-  const checkForUpdate = async (_isManual = false) => {
+  const checkForUpdate = async (isManual = false) => {
     try {
-      // In Tauri v2, check() returns the Update object or null if up to date
       const update = await check();
       if (update) {
         startTransition(() => {
           setUpdateInfo(update);
+          setStatus('idle');
+          setErrorMessage(null);
           setIsOpen(true);
         });
+        if (onCheckComplete) onCheckComplete('updated', update.version);
+      } else {
+        if (onCheckComplete && isManual) onCheckComplete('no-update');
       }
-    } catch (err) {
-      console.log('Update check skipped/offline:', err);
-    } finally {
-      if (onCheckComplete) onCheckComplete();
+    } catch (err: unknown) {
+      console.error('Update check failed:', err);
+      if (onCheckComplete && isManual) onCheckComplete('error');
     }
   };
 
@@ -56,7 +57,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
     if (!updateInfo) return;
 
     try {
-      setDownloading(true);
+      setStatus('downloading');
+      setErrorMessage(null);
       let downloaded = 0;
       let total = 0;
 
@@ -74,18 +76,30 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             }
             break;
           case 'Finished':
-            setDownloading(false);
+            setStatus('installing');
             break;
         }
       });
 
-      // Restart application into the new version
-      await relaunch();
-    } catch (error) {
+      setStatus('restarting');
+      // Wait a moment for NSIS installer to initialize, then relaunch
+      setTimeout(async () => {
+        try {
+          await relaunch();
+        } catch (e: unknown) {
+          console.error('Relaunch failed:', e);
+          setStatus('error');
+          setErrorMessage('Update downloaded. Please manually close and reopen the app to apply.');
+        }
+      }, 1000);
+    } catch (error: unknown) {
       console.error('Failed to install update:', error);
-      setDownloading(false);
+      setStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Error installing update. Please try again.');
     }
   };
+
+  const isBusy = status === 'downloading' || status === 'installing' || status === 'restarting';
 
   return (
     <AnimatePresence>
@@ -113,15 +127,15 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                       <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brass-100 dark:bg-brass-900/60 text-brass-700 dark:text-brass-400 border border-brass-500/20">
                         v{updateInfo.version}
                       </span>
-                      <span className="text-xs text-sage-500">New release ready</span>
+                      <span className="text-xs text-sage-500">Ready to install</span>
                     </div>
                   </div>
                 </div>
 
-                {!downloading && (
+                {!isBusy && (
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-1 rounded-lg text-sage-400 hover:text-sage-700 dark:hover:text-sage-200 hover:bg-sage-200/50 dark:hover:bg-sage-300/20 transition-colors"
+                    className="p-1 rounded-lg text-sage-400 hover:text-sage-700 dark:hover:text-sage-900 hover:bg-sage-200/50 dark:hover:bg-sage-300/20 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -141,37 +155,50 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 </div>
               </div>
 
-              {/* Progress Bar during Download */}
-              {downloading && (
+              {/* Progress & Installation States */}
+              {isBusy && (
                 <div className="space-y-2 pt-1">
                   <div className="flex justify-between text-xs font-medium text-sage-600 dark:text-sage-400">
                     <span className="flex items-center gap-1.5">
                       <RotateCw className="w-3.5 h-3.5 animate-spin text-rehab-600 dark:text-rehab-400" />
-                      Downloading update...
+                      {status === 'downloading' && `Downloading update... (${progress}%)`}
+                      {status === 'installing' && 'Applying update files...'}
+                      {status === 'restarting' && 'Relaunching RehabMonitoring...'}
                     </span>
-                    <span className="font-semibold text-rehab-700 dark:text-rehab-300">{progress}%</span>
+                    {status === 'downloading' && (
+                      <span className="font-semibold text-rehab-700 dark:text-rehab-300">{progress}%</span>
+                    )}
                   </div>
                   <div className="w-full h-2.5 bg-sage-200 dark:bg-sage-300/40 rounded-full overflow-hidden p-0.5">
                     <div
-                      className="h-full bg-linear-to-r from-rehab-500 to-rehab-600 rounded-full transition-all duration-200 ease-out shadow-xs"
-                      style={{ width: `${progress}%` }}
+                      className="h-full bg-linear-to-r from-rehab-500 to-rehab-600 rounded-full transition-all duration-200 ease-out"
+                      style={{ width: status === 'installing' || status === 'restarting' ? '100%' : `${progress}%` }}
                     />
                   </div>
-                  <div className="flex justify-end text-[11px] text-sage-400">
-                    {(downloadedBytes / (1024 * 1024)).toFixed(1)} MB
-                    {totalBytes > 0 && ` / ${(totalBytes / (1024 * 1024)).toFixed(1)} MB`}
-                  </div>
+                  {status === 'downloading' && totalBytes > 0 && (
+                    <div className="flex justify-end text-[11px] text-sage-400">
+                      {(downloadedBytes / (1024 * 1024)).toFixed(1)} MB / {(totalBytes / (1024 * 1024)).toFixed(1)} MB
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Error Message */}
+              {status === 'error' && errorMessage && (
+                <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 rounded-xl text-xs text-red-700 dark:text-red-300">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{errorMessage}</span>
                 </div>
               )}
             </div>
 
             {/* Actions */}
             <div className="px-6 py-4 bg-sage-100/50 dark:bg-sage-200/20 border-t border-brass-500/15 flex items-center justify-end space-x-3">
-              {!downloading && (
+              {!isBusy && (
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 rounded-lg text-xs font-medium text-sage-600 dark:text-sage-400 hover:text-sage-900 dark:hover:text-sage-200 hover:bg-sage-200/60 dark:hover:bg-sage-300/30 transition"
+                  className="px-4 py-2 rounded-lg text-xs font-medium text-sage-600 dark:text-sage-400 hover:text-sage-900 dark:hover:text-sage-900 hover:bg-sage-200/60 dark:hover:bg-sage-300/30 transition"
                 >
                   Remind Me Later
                 </button>
@@ -179,13 +206,17 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               <button
                 type="button"
                 onClick={handleInstall}
-                disabled={downloading}
+                disabled={isBusy}
                 className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-linear-to-r from-rehab-700 to-rehab-600 hover:from-rehab-600 hover:to-rehab-500 text-white text-xs font-medium shadow-[0_2px_10px_rgba(47,122,84,0.3)] transition disabled:opacity-50 select-none cursor-pointer"
               >
-                {downloading ? (
+                {isBusy ? (
                   <>
                     <RotateCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Installing & Restarting...</span>
+                    <span>
+                      {status === 'downloading' && 'Downloading...'}
+                      {status === 'installing' && 'Installing...'}
+                      {status === 'restarting' && 'Restarting...'}
+                    </span>
                   </>
                 ) : (
                   <>

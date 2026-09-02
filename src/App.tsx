@@ -47,7 +47,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-sage-50 text-sage-800 flex flex-col transition-colors duration-200">
-      {/* Auto update popup */}
+      {/* Auto-Updater Popup on launch */}
       <UpdateModal />
 
       <Navbar

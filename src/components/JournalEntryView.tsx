@@ -493,7 +493,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                 className={`relative flex-1 px-2.5 py-1 rounded-lg font-semibold text-center whitespace-nowrap transition-colors duration-150 shrink-0 select-none cursor-pointer ${
                   isActive
                     ? 'text-white'
-                    : 'text-sage-600 hover:text-sage-900 dark:text-sage-400 dark:hover:text-sage-100'
+                    : 'text-sage-600 hover:text-sage-900 dark:text-sage-400 dark:hover:text-sage-900'
                 }`}
               >
                 {isActive && (
@@ -730,7 +730,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsSortDropdownOpen(prev => !prev)}
-                  className="flex items-center space-x-1.5 px-3 py-2 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 dark:text-sage-200 rounded-xl text-xs font-semibold hover:border-brass-500/60 transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 rounded-xl text-xs font-semibold hover:border-brass-500/60 transition-all cursor-pointer shadow-2xs"
                 >
                   <SortIcon className="w-3.5 h-3.5 text-brass-600" />
                   <span>{currentSortOption.label}</span>
@@ -817,7 +817,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                     type="button"
                     onClick={() => setModuleFilterMode(tab.id)}
                     className={`relative px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-150 select-none cursor-pointer flex items-center space-x-1.5 shrink-0 ${
-                      isActive ? 'text-white' : 'text-sage-600 hover:text-sage-900 dark:text-sage-300 dark:hover:text-sage-100'
+                      isActive ? 'text-white' : 'text-sage-600 hover:text-sage-900 dark:text-sage-400 dark:hover:text-sage-900'
                     }`}
                   >
                     {isActive && (
