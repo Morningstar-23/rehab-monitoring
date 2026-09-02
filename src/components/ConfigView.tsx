@@ -42,13 +42,13 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-7xl mx-auto p-6 space-y-6"
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      className="max-w-7xl mx-auto p-4 md:p-6 space-y-5 h-[calc(100vh-84px)] overflow-y-auto scrollbar-gutter-stable"
     >
       {/* Top Navigation Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-sage-100 p-3 rounded-2xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-xs gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-sage-100 p-3 rounded-2xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-xs gap-3 shrink-0">
         <div className="relative flex space-x-1.5">
           {SUB_TABS.map(({ id, label, icon: Icon }) => {
             const count =
@@ -61,18 +61,19 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
             return (
               <button
                 key={id}
+                type="button"
                 onClick={() => setConfigTab(id)}
-                className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors duration-200 ${
+                className={`relative flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
                   isActive
                     ? 'text-white'
-                    : 'text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200'
+                    : 'text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-200 dark:text-sage-300'
                 }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="config-active-pill"
-                    className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-xl shadow-sm"
-                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-xl shadow-xs"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
                   />
                 )}
                 <Icon className="w-4 h-4 relative z-10" />
@@ -91,12 +92,12 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.18 }}
+              transition={{ duration: 0.15 }}
               whileTap={{ scale: 0.96 }}
               onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-brass-100/70 dark:bg-brass-200/30 border border-brass-300/60 dark:border-brass-400/40 text-brass-800 rounded-xl text-xs font-semibold hover:bg-brass-200/60 transition-colors"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-brass-100/70 dark:bg-brass-200/30 border border-brass-300/60 dark:border-brass-400/40 text-brass-800 dark:text-brass-300 rounded-xl text-xs font-semibold hover:bg-brass-200/60 transition-colors cursor-pointer shadow-2xs"
             >
-              <Upload className="w-3.5 h-3.5" />
+              <Upload className="w-3.5 h-3.5 text-brass-600" />
               <span>Bulk Paste Residents</span>
             </motion.button>
           )}
@@ -107,10 +108,11 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
       <AnimatePresence mode="wait">
         <motion.div
           key={configTab}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          className="pb-6"
         >
           {configTab === 'modules' && (
             <CategoriesModulesTab categories={categories} modules={modules} />

@@ -42,14 +42,12 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
     try {
       const res = await onExport();
 
-      // Case 1: User cancelled the Save dialog
       if (res && res.cancelled) {
         setExportState('idle');
         toast.info('Export was cancelled.');
         return;
       }
 
-      // Case 2: Successful export with path/filename
       if (res && res.success) {
         setExportState('success');
         const displayLocation = res.path ? res.path : res.filename;
@@ -61,7 +59,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
         return;
       }
 
-      // Case 3: onExport was called without returning ExportResult (fallback)
       setExportState('success');
       toast.success('Matrix data successfully exported to Excel.', 'Excel Export Complete');
       setTimeout(() => {
@@ -75,8 +72,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
   };
 
   return (
-    <header className="glass-dark sticky top-0 z-50 text-white transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-17 flex items-center justify-between">
+    <header className="glass-dark sticky top-0 z-50 text-white transition-colors duration-200 w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-6 h-17 flex items-center justify-between">
 
         {/* Brand */}
         <div className="flex items-center space-x-3">
