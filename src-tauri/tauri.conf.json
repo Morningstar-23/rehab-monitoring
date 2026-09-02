@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "RehabMonitoring",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "identifier": "com.rehabmonitoring.app",
   "build": {
     "frontendDist": "../dist",
@@ -47,7 +47,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhFOUY1ODI2RkNFRTBDMDYKUldRR0RPNzhKbGlmamlEY0N4MGN3b3NSY3pYM09QSkNyOTdHb0h2QW1NL0pIU3Rvb29rT3hpaWMK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEwNzI4NTVERTIwRTE2NDgKUldSSUZnN2lYWVZ5RUZGanIyK2dVdDh4NnZvdEpYbGptdzdPSWpESHhPdUtaVDZJWHNFdHVLMCsK",
       "endpoints": [
         "https://github.com/Morningstar-23/rehab-monitoring/releases/latest/download/latest.json"
       ]
