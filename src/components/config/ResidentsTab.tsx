@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Resident } from '../../types';
 import { formatToUSDate } from '../../utils/dateUtils';
+import { useSessionStore } from '../../utils/useSessionStore';
 import { db } from '../../db/db';
 import { SearchBar } from '../SearchBar';
 import { Pagination } from '../Pagination';
@@ -13,13 +14,28 @@ interface ResidentsTabProps {
   residents: Resident[];
 }
 
-const PHASES = ['ALL', 'Junior', 'Senior', 'Aftercare', 'Discharged'];
+const PHASES = ['ALL', 'Junior', 'Senior', 'Re Entry'];
 
 export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPhaseFilter, setSelectedPhaseFilter] = useState<string>('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const {
+    configResidentSearch,
+    configResidentPhaseFilter,
+    configResidentPage,
+    configResidentPageSize,
+    setConfigState
+  } = useSessionStore();
+
+  const searchTerm = configResidentSearch;
+  const setSearchTerm = (val: string) => setConfigState({ configResidentSearch: val, configResidentPage: 1 });
+
+  const selectedPhaseFilter = configResidentPhaseFilter;
+  const setSelectedPhaseFilter = (val: string) => setConfigState({ configResidentPhaseFilter: val, configResidentPage: 1 });
+
+  const currentPage = configResidentPage;
+  const setCurrentPage = (page: number) => setConfigState({ configResidentPage: page });
+
+  const pageSize = configResidentPageSize;
+  const setPageSize = (size: number) => setConfigState({ configResidentPageSize: size, configResidentPage: 1 });
 
   const [newResident, setNewResident] = useState({
     fullName: '',
@@ -123,13 +139,12 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
             <label className="block text-xs font-medium text-sage-500 mb-1">Phase Status</label>
             <select
               value={newResident.phaseStatus}
-              onChange={e => setNewResident({ ...newResident, phaseStatus: e.target.value as any })}
+              onChange={e => setNewResident({ ...newResident, phaseStatus: e.target.value as Resident['phaseStatus'] })}
               className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-white dark:bg-sage-100 text-sage-900 focus:ring-2 focus:ring-brass-500/40"
             >
               <option value="Junior">Junior Phase</option>
               <option value="Senior">Senior Phase</option>
-              <option value="Aftercare">Aftercare</option>
-              <option value="Discharged">Discharged</option>
+              <option value="Re Entry">Re Entry</option>
             </select>
           </div>
 
@@ -149,32 +164,26 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
       {/* Right Table: Search, Filter, List & Pagination */}
       <div className="bg-sage-50 p-6 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-[0_1px_2px_rgba(11,42,31,0.04),0_12px_28px_-16px_rgba(11,42,31,0.18)] space-y-4 lg:col-span-2 flex flex-col justify-between">
         <div className="space-y-3.5">
-          {/* Controls */}
+          {/* Controls with Full Width SearchBar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <SearchBar
               value={searchTerm}
-              onChange={val => {
-                setSearchTerm(val);
-                setCurrentPage(1);
-              }}
+              onChange={setSearchTerm}
               placeholder="Search by resident name..."
               count={filteredResidents.length}
               total={residents.length}
-              className="sm:w-64"
+              className="w-full flex-1"
             />
 
             {/* Phase Filter Tabs */}
-            <div className="relative flex items-center space-x-1 bg-sage-100 dark:bg-sage-200 p-1 rounded-xl">
+            <div className="relative flex items-center space-x-1 bg-sage-100 dark:bg-sage-200 p-1 rounded-xl shrink-0">
               <Filter className="w-3.5 h-3.5 text-sage-400 ml-1.5 mr-0.5" />
               {PHASES.map(phase => {
                 const isActive = selectedPhaseFilter === phase;
                 return (
                   <button
                     key={phase}
-                    onClick={() => {
-                      setSelectedPhaseFilter(phase);
-                      setCurrentPage(1);
-                    }}
+                    onClick={() => setSelectedPhaseFilter(phase)}
                     className={`relative px-2.5 py-1 rounded-lg text-xs font-medium transition-colors duration-200 ${
                       isActive ? 'text-sage-900 font-semibold' : 'text-sage-500 dark:text-sage-400 hover:text-sage-800 dark:hover:text-sage-200'
                     }`}
@@ -254,10 +263,7 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
           totalItems={filteredResidents.length}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
-          onPageSizeChange={size => {
-            setPageSize(size);
-            setCurrentPage(1);
-          }}
+          onPageSizeChange={setPageSize}
         />
       </div>
 
@@ -322,13 +328,12 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
                   <label className="block text-xs font-medium text-sage-500 mb-1">Phase Status</label>
                   <select
                     value={editingResident.phaseStatus}
-                    onChange={e => setEditingResident({ ...editingResident, phaseStatus: e.target.value as any })}
+                    onChange={e => setEditingResident({ ...editingResident, phaseStatus: e.target.value as Resident['phaseStatus'] })}
                     className="w-full text-xs p-2.5 border border-sage-200 dark:border-sage-300 rounded-xl bg-white dark:bg-sage-100 text-sage-900 focus:ring-2 focus:ring-brass-500/40"
                   >
                     <option value="Junior">Junior Phase</option>
                     <option value="Senior">Senior Phase</option>
-                    <option value="Aftercare">Aftercare</option>
-                    <option value="Discharged">Discharged</option>
+                    <option value="Re Entry">Re Entry</option>
                   </select>
                 </div>
               </div>
@@ -356,4 +361,4 @@ export const ResidentsTab: React.FC<ResidentsTabProps> = ({ residents }) => {
       </AnimatePresence>
     </div>
   );
-};  
+};

@@ -1,11 +1,12 @@
 // src/components/JournalEntryView.tsx
-import React, { useMemo } from 'react';
+import React, { useMemo, useDeferredValue } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Category, Module, Resident, AttendanceRecord } from '../types';
 import { formatToUSDate } from '../utils/dateUtils';
 import { useSessionStore } from '../utils/useSessionStore';
 import { toggleAttendance } from '../db/db';
 import { DatePicker } from './DatePicker';
+import { Pagination } from './Pagination';
 import {
   User,
   Users,
@@ -36,7 +37,6 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
   residents,
   attendance
 }) => {
-  // Session Store State (Persisted across tab switches)
   const {
     journalResidentId,
     journalResidentSearch,
@@ -45,21 +45,33 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
     journalCatFilter,
     journalCollapsedCats,
     journalManualDates,
+    journalRosterPage,
+    journalRosterPageSize,
     setJournalState
   } = useSessionStore();
 
-  // Resident Search & Filter State
+  const rosterPage = journalRosterPage;
+  const setRosterPage = (p: number) => setJournalState({ journalRosterPage: p });
+
+  const rosterPageSize = journalRosterPageSize;
+  const setRosterPageSize = (s: number) => setJournalState({ journalRosterPageSize: s, journalRosterPage: 1 });
+
   const selectedResidentId = journalResidentId || residents[0]?.id || '';
   const setSelectedResidentId = (id: string) => setJournalState({ journalResidentId: id });
 
   const residentSearch = journalResidentSearch;
-  const setResidentSearch = (val: string) => setJournalState({ journalResidentSearch: val });
+  const deferredResidentSearch = useDeferredValue(residentSearch);
+  const setResidentSearch = (val: string) => {
+    setJournalState({ journalResidentSearch: val, journalRosterPage: 1 });
+  };
 
   const residentPhaseFilter = journalPhaseFilter;
-  const setResidentPhaseFilter = (val: string) => setJournalState({ journalPhaseFilter: val });
+  const setResidentPhaseFilter = (val: string) => {
+    setJournalState({ journalPhaseFilter: val, journalRosterPage: 1 });
+  };
 
-  // Category & Module Search & Filter State
   const moduleSearch = journalModuleSearch;
+  const deferredModuleSearch = useDeferredValue(moduleSearch);
   const setModuleSearch = (val: string) => setJournalState({ journalModuleSearch: val });
 
   const selectedCatFilter = journalCatFilter;
@@ -67,15 +79,12 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
 
   const collapsedCategories = useMemo(() => new Set(journalCollapsedCats), [journalCollapsedCats]);
 
-  // Manual Date Input per Module
   const manualDateMap = journalManualDates;
   const setManualDateMap = (map: Record<string, string>) => setJournalState({ journalManualDates: map });
 
-  // Sort Categories and Modules by sortOrder
   const sortedCats = useMemo(() => [...categories].sort((a, b) => a.sortOrder - b.sortOrder), [categories]);
   const sortedMods = useMemo(() => [...modules].sort((a, b) => a.sortOrder - b.sortOrder), [modules]);
 
-  // Total attendance counts per resident
   const residentAttendanceCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const a of attendance) {
@@ -84,23 +93,28 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
     return counts;
   }, [attendance]);
 
-  // Filter Residents
   const filteredResidents = useMemo(() => {
-    const query = residentSearch.toLowerCase().trim();
+    const query = deferredResidentSearch.toLowerCase().trim();
     return residents.filter(r => {
       const matchesName = !query || r.fullName.toLowerCase().includes(query);
       const matchesPhase = residentPhaseFilter === 'ALL' || r.phaseStatus === residentPhaseFilter;
       return matchesName && matchesPhase;
     });
-  }, [residents, residentSearch, residentPhaseFilter]);
+  }, [residents, deferredResidentSearch, residentPhaseFilter]);
 
-  // Active resident details
+  // Paginate filtered residents
+  const totalRosterPages = Math.ceil(filteredResidents.length / rosterPageSize) || 1;
+  const paginatedResidents = useMemo(() => {
+    if (rosterPageSize >= filteredResidents.length) return filteredResidents;
+    const start = (rosterPage - 1) * rosterPageSize;
+    return filteredResidents.slice(start, start + rosterPageSize);
+  }, [filteredResidents, rosterPage, rosterPageSize]);
+
   const selectedResident = useMemo(
     () => residents.find(r => r.id === selectedResidentId) || filteredResidents[0] || residents[0],
     [residents, selectedResidentId, filteredResidents]
   );
 
-  // Attendance Map for the selected resident
   const currentResidentAttendance = useMemo(() => {
     if (!selectedResident) return new Map<string, string[]>();
     const map = new Map<string, string[]>();
@@ -122,7 +136,6 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
     return sum;
   }, [currentResidentAttendance]);
 
-  // Category collapse toggles
   const toggleCategoryCollapse = (catId: string) => {
     const next = new Set(journalCollapsedCats);
     if (next.has(catId)) next.delete(catId);
@@ -141,9 +154,9 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
   const phaseBadgeClass = (phase?: Resident['phaseStatus']) => {
     switch (phase) {
       case 'Junior':
-        return 'bg-brass-100/80 dark:bg-brass-200/30 text-brass-800 dark:text-brass-300 border-brass-300/70 dark:border-brass-400/40';
+        return 'bg-brass-100/80 dark:bg-brass-500/20 text-brass-800 dark:text-brass-300 border-brass-300/70 dark:border-brass-400/40';
       case 'Senior':
-        return 'bg-rehab-100/80 dark:bg-rehab-100/50 text-rehab-800 dark:text-rehab-600 border-rehab-500/25';
+        return 'bg-rehab-100/80 dark:bg-rehab-500/20 text-rehab-800 dark:text-rehab-300 border-rehab-500/25';
       default:
         return 'bg-sage-100 dark:bg-sage-200 text-sage-600 dark:text-sage-400 border-sage-200 dark:border-sage-300';
     }
@@ -151,17 +164,16 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
       className="max-w-[1600px] mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(100vh-88px)]"
     >
       {/* ========================================================= */}
       {/* LEFT COLUMN: RESIDENT ROSTER (4 cols on lg)                */}
       {/* ========================================================= */}
-      <div className="lg:col-span-4 bg-white dark:bg-sage-100 p-4 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-xs flex flex-col h-full overflow-hidden space-y-3.5 min-w-0">
-        {/* Header Title */}
-        <div className="flex items-center justify-between pb-1">
+      <div className="lg:col-span-4 bg-white dark:bg-sage-100 p-4 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-xs flex flex-col h-full overflow-hidden space-y-3 min-w-0">
+        <div className="flex items-center justify-between pb-0.5">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-xl bg-brass-100/70 dark:bg-brass-500/20 text-brass-700 dark:text-brass-400">
               <Users className="w-4 h-4" />
@@ -205,34 +217,27 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
               <button
                 key={phase}
                 onClick={() => setResidentPhaseFilter(phase)}
-                className={`relative px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors duration-200 ${
+                className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-all duration-150 ${
                   isActive
-                    ? 'text-white font-semibold'
+                    ? 'bg-rehab-700 dark:bg-rehab-600 text-white font-semibold shadow-xs'
                     : 'bg-sage-50 dark:bg-sage-200 text-sage-600 dark:text-sage-300 hover:bg-sage-100 dark:hover:bg-sage-300 border border-sage-200/80 dark:border-sage-300/60'
                 }`}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="journal-resident-phase-pill"
-                    className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-xs"
-                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                  />
-                )}
-                <span className="relative z-10">{phase === 'ALL' ? 'All Phases' : phase}</span>
+                {phase === 'ALL' ? 'All Phases' : phase}
               </button>
             );
           })}
         </div>
 
-        {/* Resident Scrollable List with Smooth Sliding Selection Animation */}
+        {/* Paginated Scrollable Resident List */}
         <div className="overflow-y-auto space-y-1.5 flex-1 pr-1 divide-y divide-sage-100 dark:divide-sage-200/50">
-          {filteredResidents.length === 0 ? (
+          {paginatedResidents.length === 0 ? (
             <div className="p-8 text-center space-y-2">
               <User className="w-8 h-8 text-sage-300 dark:text-sage-400 mx-auto" />
               <p className="text-xs text-sage-400 italic">No residents found matching your search.</p>
             </div>
           ) : (
-            filteredResidents.map(r => {
+            paginatedResidents.map(r => {
               const isSelected = selectedResident?.id === r.id;
               const attendedCount = residentAttendanceCounts.get(r.id) || 0;
 
@@ -240,19 +245,12 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                 <button
                   key={r.id}
                   onClick={() => setSelectedResidentId(r.id)}
-                  className={`relative w-full text-left p-3 rounded-2xl transition-colors duration-150 overflow-hidden group ${
-                    isSelected ? 'text-white' : 'text-sage-800 dark:text-sage-200 hover:bg-sage-50 dark:hover:bg-sage-200/60'
+                  className={`relative w-full text-left p-3 rounded-2xl transition-all duration-150 overflow-hidden group ${
+                    isSelected
+                      ? 'bg-rehab-700 dark:bg-rehab-600 text-white shadow-md'
+                      : 'text-sage-800 dark:text-sage-200 hover:bg-sage-50 dark:hover:bg-sage-200/60'
                   }`}
                 >
-                  {/* Sliding Spring Active Indicator */}
-                  {isSelected && (
-                    <motion.div
-                      layoutId="journal-active-resident"
-                      className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-2xl shadow-md"
-                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                    />
-                  )}
-
                   <div className="relative z-10 flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center space-x-1.5">
@@ -302,6 +300,21 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
             })
           )}
         </div>
+
+        {/* Resident Sidebar Pagination Controls */}
+        <div className="pt-2 border-t border-sage-200 dark:border-sage-300">
+          <Pagination
+            currentPage={rosterPage}
+            totalPages={totalRosterPages}
+            totalItems={filteredResidents.length}
+            pageSize={rosterPageSize}
+            onPageChange={setRosterPage}
+            onPageSizeChange={size => {
+              setRosterPageSize(size);
+              setRosterPage(1);
+            }}
+          />
+        </div>
       </div>
 
       {/* ========================================================= */}
@@ -337,7 +350,6 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
         {/* Modules Filter & Category Scrollable Legend Bar */}
         <div className="space-y-2.5 shrink-0 min-w-0 w-full">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            {/* Module Name Search Bar */}
             <div className="relative flex-1">
               <Search className="w-3.5 h-3.5 text-sage-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -350,16 +362,14 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
               {moduleSearch && (
                 <button
                   onClick={() => setModuleSearch('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 p-0.5"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 dark:hover:text-sage-200 p-0.5"
                 >
                   <X className="w-3 h-3" />
                 </button>
               )}
             </div>
 
-            {/* Collapse/Expand All Button */}
-            <motion.button
-              whileTap={{ scale: 0.96 }}
+            <button
               onClick={toggleExpandCollapseAll}
               className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-700 dark:text-sage-300 rounded-xl text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 transition-colors shrink-0 shadow-2xs"
             >
@@ -367,7 +377,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
               <span>
                 {journalCollapsedCats.length === categories.length ? 'Expand All' : 'Collapse All'}
               </span>
-            </motion.button>
+            </button>
           </div>
 
           {/* Fully Scrollable Category Legend Filter Pills */}
@@ -379,20 +389,13 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
 
             <button
               onClick={() => setSelectedCatFilter('ALL')}
-              className={`relative px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 whitespace-nowrap shrink-0 ${
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 whitespace-nowrap shrink-0 ${
                 selectedCatFilter === 'ALL'
-                  ? 'text-white'
+                  ? 'bg-rehab-700 dark:bg-rehab-600 text-white shadow-xs'
                   : 'bg-sage-50 dark:bg-sage-200 text-sage-600 dark:text-sage-300 border border-sage-200 dark:border-sage-300 hover:bg-sage-100 dark:hover:bg-sage-300'
               }`}
             >
-              {selectedCatFilter === 'ALL' && (
-                <motion.div
-                  layoutId="journal-cat-filter-pill"
-                  className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-xs"
-                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                />
-              )}
-              <span className="relative z-10">All Categories ({modules.length})</span>
+              All Categories ({modules.length})
             </button>
 
             {sortedCats.map(cat => {
@@ -403,26 +406,19 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCatFilter(isSelected ? 'ALL' : cat.id)}
-                  className={`relative flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 border whitespace-nowrap shrink-0 ${
+                  className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 border whitespace-nowrap shrink-0 ${
                     isSelected
-                      ? 'border-transparent text-white'
+                      ? 'bg-rehab-700 dark:bg-rehab-600 text-white border-transparent shadow-xs'
                       : 'border-sage-200 dark:border-sage-300 bg-sage-50 dark:bg-sage-200 text-sage-700 dark:text-sage-300 hover:bg-sage-100 dark:hover:bg-sage-300'
                   }`}
                 >
-                  {isSelected && (
-                    <motion.div
-                      layoutId="journal-cat-filter-pill"
-                      className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-xs"
-                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                    />
-                  )}
                   <span
-                    className="relative z-10 w-2.5 h-2.5 rounded-full border border-white/40 shrink-0"
+                    className="w-2.5 h-2.5 rounded-full border border-white/40 shrink-0"
                     style={{ backgroundColor: cat.colorHex }}
                   />
-                  <span className="relative z-10">{cat.name}</span>
+                  <span>{cat.name}</span>
                   <span
-                    className={`relative z-10 text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                       isSelected
                         ? 'bg-white/20 text-white'
                         : 'bg-sage-200/80 dark:bg-sage-300/80 text-sage-600 dark:text-sage-300'
@@ -445,14 +441,14 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                 .filter(m => m.categoryId === cat.id)
                 .filter(
                   m =>
-                    !moduleSearch ||
-                    m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
-                    cat.name.toLowerCase().includes(moduleSearch.toLowerCase())
+                    !deferredModuleSearch ||
+                    m.name.toLowerCase().includes(deferredModuleSearch.toLowerCase()) ||
+                    cat.name.toLowerCase().includes(deferredModuleSearch.toLowerCase())
                 );
 
-              const isCollapsed = collapsedCategories.has(cat.id) && !moduleSearch;
+              const isCollapsed = collapsedCategories.has(cat.id) && !deferredModuleSearch;
 
-              if (moduleSearch && catMods.length === 0) return null;
+              if (deferredModuleSearch && catMods.length === 0) return null;
 
               let catAttendedSessions = 0;
               catMods.forEach(m => {
@@ -465,7 +461,6 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                   key={cat.id}
                   className="bg-sage-50/70 dark:bg-sage-200/40 rounded-2xl border border-sage-200 dark:border-sage-300 overflow-hidden shadow-2xs"
                 >
-                  {/* Category Header Bar */}
                   <div
                     onClick={() => toggleCategoryCollapse(cat.id)}
                     className="px-4 py-3 flex items-center justify-between cursor-pointer select-none hover:bg-sage-100/60 dark:hover:bg-sage-200/80 transition-colors border-b border-sage-200/70 dark:border-sage-300/70"
@@ -501,20 +496,19 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                     </div>
                   </div>
 
-                  {/* Modules Grid */}
                   <AnimatePresence initial={false}>
                     {!isCollapsed && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
                         <div className="p-3.5 grid grid-cols-1 md:grid-cols-2 gap-3">
                           {catMods.length === 0 ? (
                             <div className="col-span-2 p-6 text-center text-xs text-sage-400 italic">
-                              No modules match "{moduleSearch}" in this category.
+                              No modules match "{deferredModuleSearch}" in this category.
                             </div>
                           ) : (
                             catMods.map(mod => {
@@ -526,7 +520,6 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                   key={mod.id}
                                   className="p-3.5 bg-white dark:bg-sage-100 border border-sage-200 dark:border-sage-300 rounded-xl space-y-3 flex flex-col justify-between shadow-xs hover:border-brass-400/60 transition-colors"
                                 >
-                                  {/* Module Title & Attended Counter */}
                                   <div className="space-y-2">
                                     <div className="flex items-start justify-between gap-2">
                                       <span className="font-semibold text-xs text-sage-900 dark:text-sage-100 leading-snug">
@@ -544,47 +537,38 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                       </span>
                                     </div>
 
-                                    {/* Attended Dates Pills */}
                                     <div className="min-h-[26px]">
-                                      <AnimatePresence initial={false}>
-                                        {attendedDates.length > 0 ? (
-                                          <div className="flex flex-wrap gap-1.5">
-                                            {attendedDates.map(d => (
-                                              <motion.span
-                                                key={d}
-                                                initial={{ opacity: 0, scale: 0.85 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                exit={{ opacity: 0, scale: 0.85 }}
-                                                transition={{ duration: 0.15 }}
-                                                className="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-rehab-100/90 dark:bg-rehab-500/25 text-rehab-900 dark:text-rehab-300 border border-rehab-500/30 text-[11px] font-mono font-semibold rounded-lg shadow-2xs"
+                                      {attendedDates.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {attendedDates.map(d => (
+                                            <span
+                                              key={d}
+                                              className="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-rehab-100/90 dark:bg-rehab-500/25 text-rehab-900 dark:text-rehab-300 border border-rehab-500/30 text-[11px] font-mono font-semibold rounded-lg shadow-2xs"
+                                            >
+                                              <span>{formatToUSDate(d)}</span>
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  selectedResident &&
+                                                  toggleAttendance(selectedResident.id, mod.id, d)
+                                                }
+                                                className="text-rehab-700 dark:text-rehab-400 hover:text-red-600 dark:hover:text-red-400 p-0.5"
+                                                title="Remove attended date"
                                               >
-                                                <span>{formatToUSDate(d)}</span>
-                                                <button
-                                                  type="button"
-                                                  onClick={() =>
-                                                    selectedResident &&
-                                                    toggleAttendance(selectedResident.id, mod.id, d)
-                                                  }
-                                                  className="text-rehab-700 dark:text-rehab-400 hover:text-red-600 dark:hover:text-red-400 p-0.5"
-                                                  title="Remove attended date"
-                                                >
-                                                  <X className="w-3 h-3" />
-                                                </button>
-                                              </motion.span>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <span className="text-[11px] text-sage-400 italic">
-                                            No attendance logged yet
-                                          </span>
-                                        )}
-                                      </AnimatePresence>
+                                                <X className="w-3 h-3" />
+                                              </button>
+                                            </span>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <span className="text-[11px] text-sage-400 italic">
+                                          No attendance logged yet
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
 
-                                  {/* Bottom Section: Pre-scheduled quick tags & Manual Date Input */}
                                   <div className="pt-2.5 border-t border-sage-100 dark:border-sage-200/70 space-y-2">
-                                    {/* Pre-scheduled Dates Quick Toggle Buttons */}
                                     {mod.conductedDates && mod.conductedDates.length > 0 && (
                                       <div className="space-y-1">
                                         <span className="text-[10px] font-semibold text-sage-400 uppercase tracking-wider block flex items-center space-x-1">
@@ -604,7 +588,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                                 }
                                                 className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-semibold border flex items-center space-x-1 transition-all ${
                                                   isAttended
-                                                    ? 'bg-rehab-700 dark:bg-rehab-600 text-white border-rehab-800 shadow-2xs'
+                                                    ? 'bg-rehab-700 dark:bg-rehab-600 text-white border-rehab-800 dark:border-rehab-500 shadow-2xs'
                                                     : 'bg-sage-50 dark:bg-sage-200 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-300 hover:border-brass-400'
                                                 }`}
                                               >
@@ -617,7 +601,6 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                       </div>
                                     )}
 
-                                    {/* Manual Date Picker Input */}
                                     <div className="flex items-center space-x-1.5 pt-0.5">
                                       <div className="flex-1 min-w-0">
                                         <DatePicker
@@ -630,8 +613,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                           className="w-full"
                                         />
                                       </div>
-                                      <motion.button
-                                        whileTap={{ scale: 0.95 }}
+                                      <button
                                         type="button"
                                         disabled={!curManual || !selectedResident}
                                         onClick={() => {
@@ -645,7 +627,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                                       >
                                         <Plus className="w-3 h-3" />
                                         <span>Add</span>
-                                      </motion.button>
+                                      </button>
                                     </div>
                                   </div>
                                 </div>

@@ -1,6 +1,6 @@
 // src/components/ConfigView.tsx
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { Category, Module, Resident } from '../types';
 import { useSessionStore } from '../utils/useSessionStore';
 import { CategoriesModulesTab } from './config/CategoriesModulesTab';
@@ -85,28 +85,46 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
           })}
         </div>
 
-        {configTab === 'residents' && (
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-brass-100/70 dark:bg-brass-200/30 border border-brass-300/60 dark:border-brass-400/40 text-brass-800 dark:text-brass-300 rounded-xl text-xs font-semibold hover:bg-brass-200/60 transition-colors"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Bulk Paste Residents</span>
-          </motion.button>
-        )}
+        <AnimatePresence>
+          {configTab === 'residents' && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.18 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-brass-100/70 dark:bg-brass-200/30 border border-brass-300/60 dark:border-brass-400/40 text-brass-800 dark:text-brass-300 rounded-xl text-xs font-semibold hover:bg-brass-200/60 transition-colors"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Bulk Paste Residents</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Render Active Sub-Tab */}
-      {configTab === 'modules' && (
-        <CategoriesModulesTab categories={categories} modules={modules} />
-      )}
+      {/* Render Active Sub-Tab with Animated Transitions */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={configTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {configTab === 'modules' && (
+            <CategoriesModulesTab categories={categories} modules={modules} />
+          )}
 
-      {configTab === 'residents' && (
-        <ResidentsTab residents={residents} />
-      )}
+          {configTab === 'residents' && (
+            <ResidentsTab residents={residents} />
+          )}
 
-      {configTab === 'backup' && <BackupTab />}
+          {configTab === 'backup' && (
+            <BackupTab />
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Smart Import Modal */}
       <SmartImportModal

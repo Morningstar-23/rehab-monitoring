@@ -1,5 +1,5 @@
 // src/components/MatrixView.tsx
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useDeferredValue, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Category, Module, Resident, AttendanceRecord, MatrixSettings } from '../types';
 import { formatToUSDate } from '../utils/dateUtils';
@@ -39,20 +39,141 @@ function getContrastTextColor(hexColor?: string, fallback = '#171A15'): string {
   return yiq >= 145 ? '#171A15' : '#FFFFFF';
 }
 
-function useStickyOffsets(widths: { name: number; admission: number; elevation: number }) {
-  return useMemo(() => {
-    const nameLeft = 0;
-    const admissionLeft = widths.name;
-    const elevationLeft = widths.name + widths.admission;
-    return { nameLeft, admissionLeft, elevationLeft };
-  }, [widths.name, widths.admission, widths.elevation]);
+// ----------------------------------------------------------------------
+// Memoized Row Component (Renders once per resident)
+// ----------------------------------------------------------------------
+interface MatrixRowProps {
+  resident: Resident;
+  sortedCats: Category[];
+  catModuleMap: Map<string, Module[]>;
+  attMap: Map<string, string[]>;
+  stickDates: boolean;
+  offsets: { nameLeft: number; admissionLeft: number; elevationLeft: number };
+  sessionsTotalBgHex: string;
+  onCellClick: (residentId: string, moduleId: string) => void;
 }
 
+const MatrixRowItem = memo<MatrixRowProps>(({
+  resident,
+  sortedCats,
+  catModuleMap,
+  attMap,
+  stickDates,
+  offsets,
+  sessionsTotalBgHex,
+  onCellClick
+}) => {
+  let attendedTotal = 0;
+
+  return (
+    <tr className="hover:bg-sage-100/70 dark:hover:bg-sage-200/50 transition-colors">
+      {/* Name */}
+      <td
+        className="sticky z-20 p-2.5 font-medium text-sage-900 dark:text-sage-100 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100"
+        style={{ left: offsets.nameLeft }}
+      >
+        <div className="truncate font-semibold text-xs" title={resident.fullName}>
+          {resident.fullName}
+        </div>
+      </td>
+
+      {/* Admission */}
+      <td
+        className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100' : 'bg-white dark:bg-sage-100'} p-2 text-center text-sage-700 dark:text-sage-200 font-mono text-xs border-r border-b border-sage-200 dark:border-sage-300`}
+        style={{ left: stickDates ? offsets.admissionLeft : undefined }}
+      >
+        <div className="truncate font-medium">
+          {formatToUSDate(resident.admissionDate) || '—'}
+        </div>
+      </td>
+
+      {/* Elevation */}
+      <td
+        className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100' : 'bg-white dark:bg-sage-100'} p-2 text-center text-sage-700 dark:text-sage-200 font-mono text-xs border-r border-b border-sage-300 dark:border-sage-400`}
+        style={{ left: stickDates ? offsets.elevationLeft : undefined }}
+      >
+        <div className="truncate font-medium">
+          {formatToUSDate(resident.elevationDate) || '—'}
+        </div>
+      </td>
+
+      {/* Modules */}
+      {sortedCats.map(cat => {
+        const mods = catModuleMap.get(cat.id) || [];
+        const catThemeColor = cat.colorHex || '#2F7A54';
+
+        return mods.map(mod => {
+          const dates = attMap.get(`${resident.id}_${mod.id}`) || [];
+          if (dates.length > 0) attendedTotal++;
+
+          return (
+            <td
+              key={mod.id}
+              onClick={() => onCellClick(resident.id, mod.id)}
+              className="p-1.5 text-center border-r border-b border-sage-200 dark:border-sage-300 cursor-pointer hover:bg-brass-100/30 dark:hover:bg-brass-500/15 relative bg-white dark:bg-sage-100 select-none"
+            >
+              {dates.length > 0 ? (
+                <div className="space-y-0.5">
+                  {dates.map((d, i) => (
+                    <span
+                      key={i}
+                      className="inline-block px-1.5 py-0.5 rounded font-mono text-[11px] font-bold border shadow-xs"
+                      style={{
+                        backgroundColor: `${catThemeColor}28`,
+                        borderColor: `${catThemeColor}80`,
+                        color: catThemeColor
+                      }}
+                    >
+                      {formatToUSDate(d)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-sage-400 dark:text-sage-600 select-none">—</span>
+              )}
+            </td>
+          );
+        });
+      })}
+
+      {/* Sessions Total */}
+      <td
+        className="sticky right-0 z-20 p-2 text-center font-bold font-mono border-l border-b border-sage-300 dark:border-sage-400 bg-white dark:bg-sage-100"
+        style={{ color: sessionsTotalBgHex }}
+      >
+        <span
+          className="px-2.5 py-0.5 rounded-full text-xs font-bold border"
+          style={{
+            backgroundColor: `${sessionsTotalBgHex}25`,
+            borderColor: `${sessionsTotalBgHex}60`,
+            color: sessionsTotalBgHex
+          }}
+        >
+          {attendedTotal}
+        </span>
+      </td>
+    </tr>
+  );
+});
+
+// ----------------------------------------------------------------------
+// Main MatrixView
+// ----------------------------------------------------------------------
 export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, residents, attendance }) => {
-  // Session Store State (Persists across page navigation)
   const { matrixSearch, matrixPage, matrixPageSize, matrixStickDates, setMatrixState } = useSessionStore();
 
+  // Stage 1 vs Stage 2: Delay heavy 100-row cell rendering by 120ms
+  // This lets the page fade-in animation & Navbar pill complete at a solid 120 FPS!
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsHydrated(true);
+    }, 120);
+    return () => clearTimeout(timer);
+  }, []);
+
   const searchTerm = matrixSearch;
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const setSearchTerm = (term: string) => setMatrixState({ matrixSearch: term, matrixPage: 1 });
 
   const currentPage = matrixPage;
@@ -67,7 +188,6 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
     setMatrixState({ matrixStickDates: next });
   };
 
-  // Local popovers and modal states
   const [popoverCell, setPopoverCell] = useState<{ residentId: string; moduleId: string } | null>(null);
   const [manualDate, setManualDate] = useState('');
   const [newScheduleDate, setNewScheduleDate] = useState('');
@@ -98,59 +218,66 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
   }, [categories, modules]);
 
   const attMap = useMemo(() => {
+    if (!isHydrated) return new Map<string, string[]>();
     const map = new Map<string, string[]>();
     for (const a of attendance) {
       const key = `${a.residentId}_${a.moduleId}`;
       const list = map.get(key);
-      if (list) {
-        list.push(a.dateAttended);
-      } else {
-        map.set(key, [a.dateAttended]);
-      }
+      if (list) list.push(a.dateAttended);
+      else map.set(key, [a.dateAttended]);
     }
     return map;
-  }, [attendance]);
+  }, [attendance, isHydrated]);
 
   const filteredResidents = useMemo(() => {
-    const query = searchTerm.toLowerCase().trim();
+    const query = deferredSearchTerm.toLowerCase().trim();
     if (!query) return residents;
     return residents.filter(r => r.fullName.toLowerCase().includes(query));
-  }, [residents, searchTerm]);
+  }, [residents, deferredSearchTerm]);
 
   const totalPages = Math.ceil(filteredResidents.length / pageSize) || 1;
 
   const paginatedResidents = useMemo(() => {
+    if (!isHydrated) return [];
     if (pageSize >= filteredResidents.length) return filteredResidents;
     const start = (currentPage - 1) * pageSize;
     return filteredResidents.slice(start, start + pageSize);
-  }, [filteredResidents, currentPage, pageSize]);
+  }, [filteredResidents, currentPage, pageSize, isHydrated]);
 
   const getWidth = useCallback(
     (key: string) => widths[key] ?? defaultModWidth,
     [widths, defaultModWidth]
   );
 
-  const offsets = useStickyOffsets({
-    name: getWidth('name'),
-    admission: getWidth('admission'),
-    elevation: getWidth('elevation')
-  });
+  const offsets = useMemo(() => ({
+    nameLeft: 0,
+    admissionLeft: getWidth('name'),
+    elevationLeft: getWidth('name') + getWidth('admission')
+  }), [getWidth]);
 
   const handleResizeStart = (key: string, e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     resizingRef.current = { key, startX: e.clientX, startWidth: getWidth(key) };
 
+    let animationFrameId: number | null = null;
+
     const handlePointerMove = (moveEvent: PointerEvent) => {
       if (!resizingRef.current) return;
-      const { key: k, startX, startWidth } = resizingRef.current;
-      const delta = moveEvent.clientX - startX;
-      const min = k === 'name' ? NAME_COL_MIN : MIN_COL_WIDTH;
-      const next = Math.min(MAX_COL_WIDTH, Math.max(min, startWidth + delta));
-      setWidths(prev => ({ ...prev, [k]: next }));
+      if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+
+      animationFrameId = requestAnimationFrame(() => {
+        if (!resizingRef.current) return;
+        const { key: k, startX, startWidth } = resizingRef.current;
+        const delta = moveEvent.clientX - startX;
+        const min = k === 'name' ? NAME_COL_MIN : MIN_COL_WIDTH;
+        const next = Math.min(MAX_COL_WIDTH, Math.max(min, startWidth + delta));
+        setWidths(prev => ({ ...prev, [k]: next }));
+      });
     };
 
     const handlePointerUp = () => {
+      if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
       if (resizingRef.current) {
         const { key: k } = resizingRef.current;
         setWidths(prev => {
@@ -163,8 +290,8 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
       window.removeEventListener('pointerup', handlePointerUp);
     };
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerup', handlePointerUp, { once: true });
   };
 
   const handleResetWidths = async () => {
@@ -203,17 +330,9 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
     }
   };
 
-  const ResizeHandle: React.FC<{ colKey: string }> = ({ colKey }) => (
-    <div
-      onPointerDown={e => {
-        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-        handleResizeStart(colKey, e);
-      }}
-      className="absolute top-0 right-0 h-full w-2.5 cursor-col-resize group/handle flex items-center justify-center z-30 touch-none select-none"
-    >
-      <div className="w-[3px] h-[60%] rounded-full bg-black/0 dark:bg-white/0 group-hover/handle:bg-brass-600 dark:group-hover/handle:bg-brass-400 transition-colors" />
-    </div>
-  );
+  const handleCellClick = useCallback((residentId: string, moduleId: string) => {
+    setPopoverCell({ residentId, moduleId });
+  }, []);
 
   const totalTableWidth = useMemo(() => {
     const modWidthSum = sortedMods.reduce((sum, m) => sum + getWidth(m.id), 0);
@@ -226,12 +345,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
   const activeDates = useMemo(() => (popoverCell ? attMap.get(`${popoverCell.residentId}_${popoverCell.moduleId}`) || [] : []), [popoverCell, attMap]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="p-4 flex flex-col h-[calc(100vh-84px)] space-y-3 transform-gpu"
-    >
+    <div className="p-4 flex flex-col h-[calc(100vh-84px)] space-y-3 transform-gpu">
       {/* Controls Bar */}
       <div className="shrink-0 flex items-center justify-between bg-white dark:bg-sage-100 p-3 rounded-2xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-xs">
         <div className="flex items-center space-x-2 w-72 relative">
@@ -252,17 +366,14 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
 
           <div className="w-px h-4 bg-sage-200 dark:bg-sage-300" />
 
-          {/* Sticky Columns Toggle */}
           <button
             onClick={() => setStickDates(v => !v)}
             className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 dark:text-sage-100 rounded-lg text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 shadow-2xs transition-colors"
-            title={stickDates ? 'Admission & Elevation are sticky. Click to make only Name sticky.' : 'Only Name is sticky. Click to pin Admission & Elevation as well.'}
           >
             {stickDates ? <Pin className="w-3.5 h-3.5 text-brass-600 dark:text-brass-400" /> : <PinOff className="w-3.5 h-3.5 text-sage-400" />}
             <span>{stickDates ? 'Sticky: Full Details' : 'Sticky: Name Only'}</span>
           </button>
 
-          {/* Cell Colors Customizer */}
           <div className="relative">
             <button
               onClick={() => setShowColorPanel(v => !v)}
@@ -363,7 +474,6 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
           <button
             onClick={handleResetWidths}
             className="flex items-center space-x-1.5 px-3 py-1.5 bg-sage-50 dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-800 dark:text-sage-100 rounded-lg text-xs font-semibold hover:bg-sage-100 dark:hover:bg-sage-300 shadow-2xs transition-colors"
-            title="Reset all column widths to default"
           >
             <RotateCcw className="w-3.5 h-3.5 text-sage-500 dark:text-sage-300" />
             <span>Reset Widths</span>
@@ -395,14 +505,12 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
               <col style={{ width: getWidth('sessionsTotal') }} />
             </colgroup>
 
-            {/* UNIFIED STICKY THEAD */}
             <thead className="sticky top-0 z-30">
-              {/* Tier 1 Header */}
               <tr className="h-[38px]">
                 {stickDates ? (
                   <th
                     colSpan={3}
-                    className="sticky left-0 z-40 px-2.5 font-display font-semibold text-sm text-center border-r border-b border-sage-300 dark:border-sage-400 overflow-hidden whitespace-nowrap text-ellipsis"
+                    className="sticky left-0 z-40 px-2.5 font-display font-semibold text-sm text-center border-r border-b border-sage-300 dark:border-sage-400 whitespace-nowrap"
                     style={{
                       backgroundColor: settings.residentDetailsBgHex,
                       color: settings.residentDetailsTextHex || getContrastTextColor(settings.residentDetailsBgHex)
@@ -414,7 +522,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   <>
                     <th
                       colSpan={1}
-                      className="sticky left-0 z-40 px-2.5 font-display font-semibold text-sm text-center border-r border-b border-sage-300 dark:border-sage-400 overflow-hidden whitespace-nowrap text-ellipsis"
+                      className="sticky left-0 z-40 px-2.5 font-display font-semibold text-sm text-center border-r border-b border-sage-300 dark:border-sage-400 whitespace-nowrap"
                       style={{
                         backgroundColor: settings.residentDetailsBgHex,
                         color: settings.residentDetailsTextHex || getContrastTextColor(settings.residentDetailsBgHex)
@@ -424,7 +532,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                     </th>
                     <th
                       colSpan={2}
-                      className="px-2.5 font-display font-semibold text-sm text-center border-r border-b border-sage-300 dark:border-sage-400 overflow-hidden whitespace-nowrap text-ellipsis"
+                      className="px-2.5 font-display font-semibold text-sm text-center border-r border-b border-sage-300 dark:border-sage-400 whitespace-nowrap"
                       style={{
                         backgroundColor: settings.residentDetailsBgHex,
                         color: settings.residentDetailsTextHex || getContrastTextColor(settings.residentDetailsBgHex)
@@ -435,7 +543,6 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   </>
                 )}
 
-                {/* Categories */}
                 {sortedCats.map(cat => {
                   const mods = catModuleMap.get(cat.id) || [];
                   if (mods.length === 0) return null;
@@ -450,14 +557,13 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                         color: text,
                         borderTop: `3px solid ${cat.colorHex}`
                       }}
-                      className="px-2.5 text-center font-display font-semibold text-sm border-r border-b border-sage-300 dark:border-sage-400 tracking-tight overflow-hidden whitespace-nowrap text-ellipsis"
+                      className="px-2.5 text-center font-display font-semibold text-sm border-r border-b border-sage-300 dark:border-sage-400 tracking-tight whitespace-nowrap"
                     >
                       {cat.name}
                     </th>
                   );
                 })}
 
-                {/* Social Support Header */}
                 <th
                   className="sticky right-0 z-40 px-2.5 text-center font-display font-semibold text-sm border-l border-b border-sage-300 dark:border-sage-400"
                   style={{
@@ -469,11 +575,9 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                 </th>
               </tr>
 
-              {/* Tier 2 Header */}
               <tr className="h-[42px]">
-                {/* Name of Resident */}
                 <th
-                  className="sticky z-40 px-2.5 font-semibold text-left border-r border-b border-sage-300 dark:border-sage-400 relative group/col select-none"
+                  className="sticky z-40 px-2.5 font-semibold text-left border-r border-b border-sage-300 dark:border-sage-400 relative select-none"
                   style={{
                     left: offsets.nameLeft,
                     backgroundColor: settings.residentDetailsBgHex,
@@ -484,12 +588,14 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                     <GripVertical className="w-3 h-3 opacity-60 shrink-0" />
                     <span className="truncate">Name of Resident</span>
                   </div>
-                  <ResizeHandle colKey="name" />
+                  <div
+                    onPointerDown={e => handleResizeStart('name', e)}
+                    className="absolute top-0 right-0 h-full w-2.5 cursor-col-resize z-30"
+                  />
                 </th>
 
-                {/* Admission */}
                 <th
-                  className={`${stickDates ? 'sticky z-40' : 'relative z-10'} px-2 font-semibold text-center border-r border-b border-sage-300 dark:border-sage-400 group/col select-none`}
+                  className={`${stickDates ? 'sticky z-40' : 'relative z-10'} px-2 font-semibold text-center border-r border-b border-sage-300 dark:border-sage-400 select-none`}
                   style={{
                     left: stickDates ? offsets.admissionLeft : undefined,
                     backgroundColor: settings.residentDetailsBgHex,
@@ -497,12 +603,14 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   }}
                 >
                   <span className="truncate block">Admission</span>
-                  <ResizeHandle colKey="admission" />
+                  <div
+                    onPointerDown={e => handleResizeStart('admission', e)}
+                    className="absolute top-0 right-0 h-full w-2.5 cursor-col-resize z-30"
+                  />
                 </th>
 
-                {/* Elevation */}
                 <th
-                  className={`${stickDates ? 'sticky z-40' : 'relative z-10'} px-2 font-semibold text-center border-r border-b border-sage-300 dark:border-sage-400 group/col select-none`}
+                  className={`${stickDates ? 'sticky z-40' : 'relative z-10'} px-2 font-semibold text-center border-r border-b border-sage-300 dark:border-sage-400 select-none`}
                   style={{
                     left: stickDates ? offsets.elevationLeft : undefined,
                     backgroundColor: settings.residentDetailsBgHex,
@@ -510,10 +618,12 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   }}
                 >
                   <span className="truncate block">Elevation</span>
-                  <ResizeHandle colKey="elevation" />
+                  <div
+                    onPointerDown={e => handleResizeStart('elevation', e)}
+                    className="absolute top-0 right-0 h-full w-2.5 cursor-col-resize z-30"
+                  />
                 </th>
 
-                {/* Modules */}
                 {sortedCats.map(cat => {
                   const mods = catModuleMap.get(cat.id) || [];
                   const bg = cat.headerBgHex || cat.colorHex;
@@ -522,25 +632,20 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   return mods.map(mod => (
                     <th
                       key={mod.id}
-                      className="px-2 font-semibold text-center border-r border-b border-sage-300 dark:border-sage-400 relative group/col select-none"
-                      style={{
-                        backgroundColor: bg,
-                        color: text
-                      }}
+                      className="px-2 font-semibold text-center border-r border-b border-sage-300 dark:border-sage-400 relative select-none"
+                      style={{ backgroundColor: bg, color: text }}
                     >
-                      <span
-                        className="block leading-snug break-words text-[11px]"
-                        style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                        title={mod.name}
-                      >
+                      <span className="block leading-snug break-words text-[11px] line-clamp-2" title={mod.name}>
                         {mod.name}
                       </span>
-                      <ResizeHandle colKey={mod.id} />
+                      <div
+                        onPointerDown={e => handleResizeStart(mod.id, e)}
+                        className="absolute top-0 right-0 h-full w-2.5 cursor-col-resize z-30"
+                      />
                     </th>
                   ));
                 })}
 
-                {/* Sessions Total */}
                 <th
                   className="sticky right-0 z-40 px-2 font-semibold text-center border-l border-b border-sage-300 dark:border-sage-400 select-none"
                   style={{
@@ -554,104 +659,48 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
             </thead>
 
             <tbody>
-              {paginatedResidents.map(resident => {
-                let attendedTotal = 0;
-
-                return (
-                  <tr key={resident.id} className="group hover:bg-sage-100/70 dark:hover:bg-sage-200/50">
-                    {/* Name */}
-                    <td
-                      className="sticky z-20 p-2.5 font-medium text-sage-900 dark:text-sage-100 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100 group-hover:bg-sage-100 dark:group-hover:bg-sage-200"
-                      style={{ left: offsets.nameLeft }}
-                    >
-                      <div className="truncate font-semibold" title={resident.fullName}>
-                        {resident.fullName}
-                      </div>
+              {!isHydrated ? (
+                // Clean Skeleton rows during the 120ms entrance transition
+                Array.from({ length: 12 }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="p-3 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
+                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-28" />
                     </td>
-
-                    {/* Admission */}
-                    <td
-                      className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100 group-hover:bg-sage-100 dark:group-hover:bg-sage-200' : 'bg-white dark:bg-sage-100'} p-2 text-center text-sage-700 dark:text-sage-200 font-mono text-xs border-r border-b border-sage-200 dark:border-sage-300`}
-                      style={{ left: stickDates ? offsets.admissionLeft : undefined }}
-                    >
-                      <div className="truncate font-medium">
-                        {formatToUSDate(resident.admissionDate) || '—'}
-                      </div>
+                    <td className="p-3 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
+                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-16 mx-auto" />
                     </td>
-
-                    {/* Elevation */}
-                    <td
-                      className={`${stickDates ? 'sticky z-20 bg-white dark:bg-sage-100 group-hover:bg-sage-100 dark:group-hover:bg-sage-200' : 'bg-white dark:bg-sage-100'} p-2 text-center text-sage-700 dark:text-sage-200 font-mono text-xs border-r border-b border-sage-300 dark:border-sage-400`}
-                      style={{ left: stickDates ? offsets.elevationLeft : undefined }}
-                    >
-                      <div className="truncate font-medium">
-                        {formatToUSDate(resident.elevationDate) || '—'}
-                      </div>
+                    <td className="p-3 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
+                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-16 mx-auto" />
                     </td>
-
-                    {/* Modules */}
-                    {sortedCats.map(cat => {
-                      const mods = catModuleMap.get(cat.id) || [];
-                      const catThemeColor = cat.colorHex || '#2F7A54';
-
-                      return mods.map(mod => {
-                        const dates = attMap.get(`${resident.id}_${mod.id}`) || [];
-                        if (dates.length > 0) attendedTotal++;
-
-                        return (
-                          <td
-                            key={mod.id}
-                            onClick={() => setPopoverCell({ residentId: resident.id, moduleId: mod.id })}
-                            className="p-1.5 text-center border-r border-b border-sage-200 dark:border-sage-300 cursor-pointer hover:bg-brass-100/30 dark:hover:bg-brass-500/15 relative bg-white dark:bg-sage-100 group-hover:bg-sage-50 dark:group-hover:bg-sage-200/50"
-                          >
-                            {dates.length > 0 ? (
-                              <div className="space-y-0.5">
-                                {dates.map((d, i) => (
-                                  <span
-                                    key={i}
-                                    className="inline-block px-1.5 py-0.5 rounded font-mono text-[11px] font-bold border shadow-xs"
-                                    style={{
-                                      backgroundColor: `${catThemeColor}28`,
-                                      borderColor: `${catThemeColor}80`,
-                                      color: catThemeColor
-                                    }}
-                                  >
-                                    {formatToUSDate(d)}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-sage-400 dark:text-sage-600 group-hover:text-sage-500 select-none">—</span>
-                            )}
-                          </td>
-                        );
-                      });
-                    })}
-
-                    {/* Sessions Total */}
-                    <td
-                      className="sticky right-0 z-20 p-2 text-center font-bold font-mono border-l border-b border-sage-300 dark:border-sage-400 bg-white dark:bg-sage-100 group-hover:bg-sage-100 dark:group-hover:bg-sage-200"
-                      style={{ color: settings.sessionsTotalBgHex }}
-                    >
-                      <span
-                        className="px-2.5 py-0.5 rounded-full text-xs font-bold border"
-                        style={{
-                          backgroundColor: `${settings.sessionsTotalBgHex}25`,
-                          borderColor: `${settings.sessionsTotalBgHex}60`,
-                          color: settings.sessionsTotalBgHex
-                        }}
-                      >
-                        {attendedTotal}
-                      </span>
+                    {sortedMods.map(m => (
+                      <td key={m.id} className="p-3 border-r border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
+                        <div className="h-3 bg-sage-200/50 dark:bg-sage-300/40 rounded w-7 mx-auto" />
+                      </td>
+                    ))}
+                    <td className="p-3 border-l border-b border-sage-200 dark:border-sage-300 bg-white dark:bg-sage-100">
+                      <div className="h-3.5 bg-sage-200 dark:bg-sage-300 rounded w-8 mx-auto" />
                     </td>
                   </tr>
-                );
-              })}
+                ))
+              ) : (
+                paginatedResidents.map(resident => (
+                  <MatrixRowItem
+                    key={resident.id}
+                    resident={resident}
+                    sortedCats={sortedCats}
+                    catModuleMap={catModuleMap}
+                    attMap={attMap}
+                    stickDates={stickDates}
+                    offsets={offsets}
+                    sessionsTotalBgHex={settings.sessionsTotalBgHex}
+                    onCellClick={handleCellClick}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Bottom Pagination Control */}
         <div className="px-4 py-2.5 border-t border-sage-200 dark:border-sage-300 bg-sage-50/50 dark:bg-sage-100">
           <Pagination
             currentPage={currentPage}
@@ -671,11 +720,7 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
             onClick={() => setPopoverCell(null)}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
+            <div
               onClick={e => e.stopPropagation()}
               className="bg-white dark:bg-sage-100 rounded-3xl border border-sage-200 dark:border-sage-300 hairline-brass shadow-2xl max-w-sm w-full p-5 space-y-4 text-left cursor-default"
             >
@@ -812,10 +857,10 @@ export const MatrixView: React.FC<MatrixViewProps> = ({ categories, modules, res
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };

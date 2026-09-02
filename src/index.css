@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Self-hosted fonts — run: npm i @fontsource/fraunces @fontsource/manrope */
+/* Self-hosted fonts */
 @import "@fontsource/fraunces/400.css";
 @import "@fontsource/fraunces/500.css";
 @import "@fontsource/fraunces/600.css";
@@ -98,16 +98,19 @@ body {
   font-family: var(--font-sans);
   overflow-x: hidden;
   background-image:
-    radial-gradient(circle at 12% 0%, rgba(47, 122, 84, 0.06), transparent 42%),
-    radial-gradient(circle at 100% 15%, rgba(176, 141, 87, 0.07), transparent 46%);
-  background-attachment: fixed;
-  transition: background-color 0.25s ease, color 0.25s ease;
+    radial-gradient(circle at 12% 0%, rgba(47, 122, 84, 0.05), transparent 40%),
+    radial-gradient(circle at 100% 15%, rgba(176, 141, 87, 0.06), transparent 45%);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .dark body {
   background-image:
-    radial-gradient(circle at 12% 0%, rgba(66, 158, 110, 0.08), transparent 42%),
-    radial-gradient(circle at 100% 15%, rgba(199, 166, 108, 0.06), transparent 46%);
+    radial-gradient(circle at 12% 0%, rgba(66, 158, 110, 0.06), transparent 40%),
+    radial-gradient(circle at 100% 15%, rgba(199, 166, 108, 0.05), transparent 45%);
 }
 
 /* Automatic Dark Mode Form Elements Control */
@@ -139,39 +142,28 @@ h1, h2, h3, .font-display {
   letter-spacing: -0.01em;
 }
 
-body {
-  font-size: 14px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 .dark .bg-white {
   background-color: var(--color-sage-100) !important;
 }
 
-/* Frosted glass */
+/* Glass Panels */
 .glass-panel {
-  background: rgba(250, 248, 243, 0.75);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background: rgba(250, 248, 243, 0.94);
   border: 1px solid rgba(176, 141, 87, 0.2);
 }
 
 .dark .glass-panel {
-  background: rgba(22, 28, 23, 0.88);
+  background: rgba(26, 32, 41, 0.96);
   border: 1px solid rgba(199, 166, 108, 0.25);
 }
 
 .glass-dark {
-  background: rgba(11, 42, 31, 0.92);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  background: rgba(11, 42, 31, 0.94);
   border-bottom: 1px solid rgba(176, 141, 87, 0.22);
 }
 
 .dark .glass-dark {
-  background: rgba(15, 19, 16, 0.94);
+  background: rgba(15, 19, 16, 0.96);
   border-bottom: 1px solid rgba(199, 166, 108, 0.2);
 }
 
@@ -179,8 +171,17 @@ body {
   border-color: rgba(176, 141, 87, 0.25);
 }
 
-.dark .hairline-brass {
+.dark hairline-brass {
   border-color: rgba(199, 166, 108, 0.2);
+}
+
+/* Performance CSS Containment for Desktop & WebViews */
+table {
+  contain: paint;
+}
+
+tbody tr {
+  contain: layout style;
 }
 
 /* Scrollbars */

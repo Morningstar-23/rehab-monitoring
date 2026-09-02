@@ -21,7 +21,7 @@ export interface Resident {
   admissionDate?: string;
   elevationDate?: string;
   stayDuration?: string;
-  phaseStatus: 'Junior' | 'Senior' | 'Aftercare' | 'Discharged';
+  phaseStatus: 'Junior' | 'Senior' | 'Re Entry';
   notes?: string;
 }
 

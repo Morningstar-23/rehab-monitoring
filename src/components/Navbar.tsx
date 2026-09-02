@@ -1,7 +1,7 @@
 // src/components/Navbar.tsx
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Leaf, FileSpreadsheet, Users, BookOpen, SlidersHorizontal, Download, Sun, Moon } from 'lucide-react';
+import { FileSpreadsheet, Users, BookOpen, SlidersHorizontal, Download, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 
 interface NavbarProps {
@@ -20,26 +20,6 @@ const TABS: { id: NavbarProps['activeTab']; label: string; icon: React.ElementTy
 
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport, residentCount }) => {
   const { theme, toggleTheme } = useTheme();
-  const navRef = useRef<HTMLElement>(null);
-  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
-
-  // Measure active tab position strictly relative to the <nav> element
-  useLayoutEffect(() => {
-    const updateIndicator = () => {
-      if (!navRef.current) return;
-      const activeBtn = navRef.current.querySelector<HTMLButtonElement>(`[data-tab="${activeTab}"]`);
-      if (activeBtn) {
-        setIndicator({
-          left: activeBtn.offsetLeft,
-          width: activeBtn.offsetWidth,
-        });
-      }
-    };
-
-    updateIndicator();
-    window.addEventListener('resize', updateIndicator);
-    return () => window.removeEventListener('resize', updateIndicator);
-  }, [activeTab]);
 
   return (
     <header className="glass-dark sticky top-0 z-50 text-white transition-colors duration-200">
@@ -48,11 +28,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
         {/* Brand */}
         <div className="flex items-center space-x-3">
           <motion.div
-            whileHover={{ rotate: -6, scale: 1.05 }}
+            whileHover={{ rotate: -4, scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rehab-600 to-brass-500 flex items-center justify-center shadow-[0_4px_14px_rgba(176,141,87,0.35)]"
+            className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/20 shadow-[0_4px_14px_rgba(0,0,0,0.25)] flex items-center justify-center shrink-0 p-1"
           >
-            <Leaf className="w-5 h-5 text-white stroke-[2.2]" />
+            <img
+              src="/app-icon.png"
+              alt="App Icon"
+              className="w-full h-full object-contain rounded-lg"
+            />
           </motion.div>
           <div>
             <h1 className="font-display text-lg tracking-wide leading-tight text-white font-medium">RehabMonitoring</h1>
@@ -60,37 +44,27 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav
-          ref={navRef}
-          className="relative flex space-x-1 bg-black/30 p-1.5 rounded-xl border border-white/10 shadow-inner"
-        >
-          {/* Strictly Horizontal Sliding Pill */}
-          {indicator && (
-            <motion.div
-              className="absolute top-1.5 bottom-1.5 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.3)] pointer-events-none"
-              initial={false}
-              animate={{
-                left: indicator.left,
-                width: indicator.width,
-              }}
-              transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-            />
-          )}
-
+        {/* Navigation Tabs (0ms GPU LayoutId Pill) */}
+        <nav className="relative flex space-x-1 bg-black/30 p-1.5 rounded-xl border border-white/10 shadow-inner">
           {TABS.map(({ id, label, icon: Icon }) => {
             const isActive = activeTab === id;
             return (
               <button
                 key={id}
-                data-tab={id}
                 onClick={() => onTabChange(id)}
-                className={`relative z-10 flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 select-none ${
+                className={`relative z-10 flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 select-none ${
                   isActive ? 'text-white' : 'text-sage-300 hover:text-white'
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                <span>{label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="navbar-active-pill"
+                    className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-[0_2px_10px_rgba(0,0,0,0.3)] -z-10"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <Icon className="w-4 h-4 relative z-10" />
+                <span className="relative z-10">{label}</span>
               </button>
             );
           })}
@@ -98,14 +72,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
 
         {/* Right Actions */}
         <div className="flex items-center space-x-3 pl-3">
-          {/* Active Residents Badge (Original compact size + readable dark mode font) */}
           <span className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-brass-300 border border-brass-500/30 font-medium select-none whitespace-nowrap">
             {residentCount} Active Residents
           </span>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.92 }}
+          <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             className="relative w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-brass-300 hover:text-white hover:bg-white/10 transition-colors overflow-hidden shadow-2xs"
@@ -114,38 +85,36 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange, onExport
               {theme === 'dark' ? (
                 <motion.span
                   key="sun"
-                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute inset-0 flex items-center justify-center text-amber-300"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center justify-center text-amber-300"
                 >
                   <Sun className="w-4 h-4" />
                 </motion.span>
               ) : (
                 <motion.span
                   key="moon"
-                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute inset-0 flex items-center justify-center text-brass-200"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center justify-center text-brass-200"
                 >
                   <Moon className="w-4 h-4" />
                 </motion.span>
               )}
             </AnimatePresence>
-          </motion.button>
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
+          <button
             onClick={onExport}
             className="flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-gradient-to-r from-brass-600 to-brass-500 text-white text-sm font-medium shadow-[0_2px_10px_rgba(176,141,87,0.35)] transition-opacity hover:opacity-95"
           >
             <Download className="w-4 h-4" />
             <span>Export Excel</span>
-          </motion.button>
+          </button>
         </div>
       </div>
     </header>

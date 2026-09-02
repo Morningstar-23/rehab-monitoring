@@ -1,8 +1,9 @@
 // src/components/config/CategoriesModulesTab.tsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Category, Module } from '../../types';
 import { formatToUSDate } from '../../utils/dateUtils';
+import { useSessionStore } from '../../utils/useSessionStore';
 import { db } from '../../db/db';
 import { SearchBar } from '../SearchBar';
 import { DatePicker } from '../DatePicker';
@@ -24,9 +25,9 @@ interface CategoriesModulesTabProps {
 // Picks black or white text for best contrast against a given hex background.
 function getContrastTextColor(hex: string): string {
   const clean = hex.replace('#', '');
-  const r = parseInt(clean.substring(0, 2), 16);
-  const g = parseInt(clean.substring(2, 4), 16);
-  const b = parseInt(clean.substring(4, 6), 16);
+  const r = parseInt(clean.substring(0, 2), 16) || 0;
+  const g = parseInt(clean.substring(2, 4), 16) || 0;
+  const b = parseInt(clean.substring(4, 6), 16) || 0;
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.6 ? '#171A15' : '#FAF8F3';
 }
@@ -58,10 +59,26 @@ const ModalShell: React.FC<{ onClose: () => void; children: React.ReactNode; max
 );
 
 export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ categories, modules }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const {
+    configCatSearch,
+    configCatFilter,
+    configCollapsedCats,
+    configModDateInputs,
+    setConfigState
+  } = useSessionStore();
 
+  const searchTerm = configCatSearch;
+  const setSearchTerm = (s: string) => setConfigState({ configCatSearch: s });
+
+  const selectedCategoryFilter = configCatFilter;
+  const setSelectedCategoryFilter = (f: string) => setConfigState({ configCatFilter: f });
+
+  const collapsedCategories = useMemo(() => new Set(configCollapsedCats), [configCollapsedCats]);
+
+  const moduleDateInputs = configModDateInputs;
+  const setModuleDateInputs = (inputs: Record<string, string>) => setConfigState({ configModDateInputs: inputs });
+
+  // Local Modal States
   const [newCatName, setNewCatName] = useState('');
   const [newCatColor, setNewCatColor] = useState('#2F7A54');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -70,23 +87,22 @@ export const CategoriesModulesTab: React.FC<CategoriesModulesTabProps> = ({ cate
   const [targetCategoryForNewMod, setTargetCategoryForNewMod] = useState<string | null>(null);
   const [newModName, setNewModName] = useState('');
   const [editingModule, setEditingModule] = useState<Module | null>(null);
-  const [moduleDateInputs, setModuleDateInputs] = useState<Record<string, string>>({});
 
-  const sortedCats = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
-  const sortedMods = [...modules].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedCats = useMemo(() => [...categories].sort((a, b) => a.sortOrder - b.sortOrder), [categories]);
+  const sortedMods = useMemo(() => [...modules].sort((a, b) => a.sortOrder - b.sortOrder), [modules]);
 
   const toggleCategoryCollapse = (catId: string) => {
-    const next = new Set(collapsedCategories);
+    const next = new Set(configCollapsedCats);
     if (next.has(catId)) next.delete(catId);
     else next.add(catId);
-    setCollapsedCategories(next);
+    setConfigState({ configCollapsedCats: Array.from(next) });
   };
 
   const toggleExpandCollapseAll = () => {
-    if (collapsedCategories.size === categories.length) {
-      setCollapsedCategories(new Set());
+    if (configCollapsedCats.length === categories.length) {
+      setConfigState({ configCollapsedCats: [] });
     } else {
-      setCollapsedCategories(new Set(categories.map(c => c.id)));
+      setConfigState({ configCollapsedCats: categories.map(c => c.id) });
     }
   };
 
