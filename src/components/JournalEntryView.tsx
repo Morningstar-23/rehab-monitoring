@@ -29,7 +29,7 @@ interface JournalEntryProps {
   attendance: AttendanceRecord[];
 }
 
-const PHASES = ['ALL', 'Junior', 'Senior', 'Aftercare', 'Discharged'] as const;
+const PHASES = ['ALL', 'Junior', 'Senior', 'Re Entry'] as const;
 
 export const JournalEntryView: React.FC<JournalEntryProps> = ({
   categories,
@@ -157,6 +157,7 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
         return 'bg-brass-100/80 dark:bg-brass-500/20 text-brass-800 border-brass-300/70 dark:border-brass-400/40';
       case 'Senior':
         return 'bg-rehab-100/80 dark:bg-rehab-500/20 text-rehab-800 border-rehab-500/25';
+      case 'Re Entry':
       default:
         return 'bg-sage-100 dark:bg-sage-200 text-sage-600 border-sage-200 dark:border-sage-300';
     }
@@ -209,21 +210,29 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
           )}
         </div>
 
-        {/* Phase Filter Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+        {/* Phase Filter Tabs (Smooth Sliding Segmented Control) */}
+        <div className="relative flex items-center p-1 bg-sage-100/70 dark:bg-sage-200/50 rounded-xl border border-sage-200/70 dark:border-sage-300/50 overflow-x-auto scrollbar-none text-[11px]">
           {PHASES.map(phase => {
             const isActive = residentPhaseFilter === phase;
             return (
               <button
                 key={phase}
+                type="button"
                 onClick={() => setResidentPhaseFilter(phase)}
-                className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-all duration-150 ${
+                className={`relative flex-1 px-2.5 py-1 rounded-lg font-semibold text-center whitespace-nowrap transition-colors duration-150 shrink-0 select-none ${
                   isActive
-                    ? 'bg-rehab-700 dark:bg-rehab-600 text-white font-semibold shadow-xs'
-                    : 'bg-sage-50 dark:bg-sage-200 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-300 border border-sage-200/80 dark:border-sage-300/60'
+                    ? 'text-white'
+                    : 'text-sage-600 hover:text-sage-900 dark:text-sage-400 dark:hover:text-sage-100'
                 }`}
               >
-                {phase === 'ALL' ? 'All Phases' : phase}
+                {isActive && (
+                  <motion.div
+                    layoutId="journal-roster-phase-pill"
+                    className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-xs"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10">{phase === 'ALL' ? 'All Phases' : phase}</span>
               </button>
             );
           })}
@@ -380,22 +389,29 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
             </button>
           </div>
 
-          {/* Fully Scrollable Category Legend Filter Pills */}
+          {/* Fully Scrollable Category Legend Filter Pills with Sliding Animation */}
           <div className="w-full min-w-0 overflow-x-auto pb-1.5 pt-0.5 flex items-center gap-1.5 scrollbar-thin">
-            <span className="text-[11px] font-semibold text-sage-400 uppercase tracking-wider mr-1 shrink-0 flex items-center space-x-1">
+            <span className="text-[11px] font-semibold text-sage-400 uppercase tracking-wider mr-1 shrink-0 flex items-center space-x-1 select-none">
               <Layers className="w-3 h-3 text-brass-600" />
               <span>Categories:</span>
             </span>
 
             <button
               onClick={() => setSelectedCatFilter('ALL')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 whitespace-nowrap shrink-0 ${
+              className={`relative px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-150 whitespace-nowrap shrink-0 border select-none ${
                 selectedCatFilter === 'ALL'
-                  ? 'bg-rehab-700 dark:bg-rehab-600 text-white shadow-xs'
-                  : 'bg-sage-50 dark:bg-sage-200 text-sage-600 border border-sage-200 dark:border-sage-300 hover:bg-sage-100 dark:hover:bg-sage-300'
+                  ? 'border-transparent text-white'
+                  : 'border-sage-200 dark:border-sage-300 bg-sage-50 dark:bg-sage-200 text-sage-600 hover:bg-sage-100 dark:hover:bg-sage-300'
               }`}
             >
-              All Categories ({modules.length})
+              {selectedCatFilter === 'ALL' && (
+                <motion.div
+                  layoutId="journal-cat-pill"
+                  className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-xs"
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
+              )}
+              <span className="relative z-10">All Categories ({modules.length})</span>
             </button>
 
             {sortedCats.map(cat => {
@@ -406,19 +422,26 @@ export const JournalEntryView: React.FC<JournalEntryProps> = ({
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCatFilter(isSelected ? 'ALL' : cat.id)}
-                  className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150 border whitespace-nowrap shrink-0 ${
+                  className={`relative flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors duration-150 border whitespace-nowrap shrink-0 select-none ${
                     isSelected
-                      ? 'bg-rehab-700 dark:bg-rehab-600 text-white border-transparent shadow-xs'
+                      ? 'border-transparent text-white'
                       : 'border-sage-200 dark:border-sage-300 bg-sage-50 dark:bg-sage-200 text-sage-700 hover:bg-sage-100 dark:hover:bg-sage-300'
                   }`}
                 >
+                  {isSelected && (
+                    <motion.div
+                      layoutId="journal-cat-pill"
+                      className="absolute inset-0 bg-rehab-700 dark:bg-rehab-600 rounded-lg shadow-xs"
+                      transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                    />
+                  )}
                   <span
-                    className="w-2.5 h-2.5 rounded-full border border-white/40 shrink-0"
+                    className="relative z-10 w-2.5 h-2.5 rounded-full border border-white/40 shrink-0"
                     style={{ backgroundColor: cat.colorHex }}
                   />
-                  <span>{cat.name}</span>
+                  <span className="relative z-10">{cat.name}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    className={`relative z-10 text-[10px] px-1.5 py-0.2 rounded-full font-mono transition-colors ${
                       isSelected
                         ? 'bg-white/20 text-white'
                         : 'bg-sage-200/80 dark:bg-sage-300/80 text-sage-600'
