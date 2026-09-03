@@ -46,7 +46,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-sage-50 text-sage-800 flex flex-col transition-colors duration-200">
+    <div className="h-screen w-screen overflow-hidden bg-sage-50 text-sage-800 flex flex-col transition-colors duration-200">
       {/* Auto-Updater Popup on launch */}
       <UpdateModal />
 
@@ -57,7 +57,7 @@ function AppContent() {
         residentCount={residents.length}
       />
 
-      <main className="flex-1 relative">
+      <main className="flex-1 relative overflow-y-auto overflow-x-hidden">
         <AnimatePresence mode="wait" initial={false}>
           {activeTab === 'matrix' && (
             <motion.div

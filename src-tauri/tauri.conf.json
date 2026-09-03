@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "RehabMonitoring",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "identifier": "com.rehabmonitoring.app",
   "build": {
     "frontendDist": "../dist",
